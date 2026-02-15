@@ -1,0 +1,343 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Student Analytics - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold">Student Analytics</h1>
+            <p class="text-gray-400">Track student progress and performance</p>
+        </div>
+        <div class="space-x-4">
+            <a href="{% url 'admin_dashboard' %}" class="border border-gray-600 hover:border-primary-400 px-4 py-2 rounded-lg transition">
+                ← Back to Dashboard
+            </a>
+            <button onclick="exportData()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition">
+                📊 Export Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-8">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm text-gray-400 mb-2">Date Range</label>
+                <select name="range" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2">
+                    <option value="7" {% if date_range == '7' %}selected{% endif %}>Last 7 days</option>
+                    <option value="30" {% if date_range == '30' %}selected{% endif %}>Last 30 days</option>
+                    <option value="90" {% if date_range == '90' %}selected{% endif %}>Last 90 days</option>
+                    <option value="365" {% if date_range == '365' %}selected{% endif %}>Last year</option>
+                    <option value="all" {% if date_range == 'all' %}selected{% endif %}>All time</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm text-gray-400 mb-2">Search Student</label>
+                <input type="text" name="student" value="{{ student_filter }}" 
+                       placeholder="Student name or email..."
+                       class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2">
+            </div>
+            
+            <div>
+                <label class="block text-sm text-gray-400 mb-2">Filter by Course</label>
+                <select name="course" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2">
+                    <option value="">All Courses</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}" {% if course_filter == course.id|stringformat:"i" %}selected{% endif %}>
+                        {{ course.title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="flex items-end">
+                <button type="submit" class="bg-primary-600 hover:bg-primary-700 px-6 py-2 rounded-lg w-full">
+                    Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div class="bg-gray-800 p-6 rounded-xl">
+            <h3 class="text-gray-400 text-sm mb-2">Total Students</h3>
+            <p class="text-3xl font-bold">{{ total_students }}</p>
+            <p class="text-xs text-green-400 mt-2">↑ +{{ active_students }} active</p>
+        </div>
+        
+        <div class="bg-gray-800 p-6 rounded-xl">
+            <h3 class="text-gray-400 text-sm mb-2">Total Enrollments</h3>
+            <p class="text-3xl font-bold">{{ total_enrollments }}</p>
+            <p class="text-xs text-blue-400 mt-2">{{ completed_courses }} completed</p>
+        </div>
+        
+        <div class="bg-gray-800 p-6 rounded-xl">
+            <h3 class="text-gray-400 text-sm mb-2">Avg Progress</h3>
+            <p class="text-3xl font-bold">{{ avg_progress }}%</p>
+            <div class="w-full bg-gray-700 rounded-full h-2 mt-2">
+                <div class="bg-primary-600 h-2 rounded-full" style="width: {{ avg_progress }}%"></div>
+            </div>
+        </div>
+        
+        <div class="bg-gray-800 p-6 rounded-xl">
+            <h3 class="text-gray-400 text-sm mb-2">Completion Rate</h3>
+            <p class="text-3xl font-bold">
+                {% if total_enrollments > 0 %}
+                    {% widthratio completed_courses total_enrollments 100 %}%
+                {% else %}0%{% endif %}
+            </p>
+        </div>
+        
+        <div class="bg-gray-800 p-6 rounded-xl">
+            <h3 class="text-gray-400 text-sm mb-2">Active Students</h3>
+            <p class="text-3xl font-bold">{{ active_students }}</p>
+            <p class="text-xs text-gray-400 mt-2">currently learning</p>
+        </div>
+    </div>
+
+    <!-- Performance Distribution -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Student Performance Chart -->
+        <div class="bg-gray-800 rounded-xl p-6">
+            <h2 class="text-xl font-bold mb-6">Student Performance Distribution</h2>
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>Excellent (75%+)</span>
+                        <span class="font-bold text-green-400">{{ performance_distribution.excellent }}</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div class="bg-green-500 h-2 rounded-full" 
+                             style="width: {% widthratio performance_distribution.excellent total_enrollments 100 %}%"></div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>Good (50-74%)</span>
+                        <span class="font-bold text-blue-400">{{ performance_distribution.good }}</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div class="bg-blue-500 h-2 rounded-full" 
+                             style="width: {% widthratio performance_distribution.good total_enrollments 100 %}%"></div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>Average (25-49%)</span>
+                        <span class="font-bold text-yellow-400">{{ performance_distribution.average }}</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div class="bg-yellow-500 h-2 rounded-full" 
+                             style="width: {% widthratio performance_distribution.average total_enrollments 100 %}%"></div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>Struggling (below 25%)</span>
+                        <span class="font-bold text-red-400">{{ performance_distribution.struggling }}</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div class="bg-red-500 h-2 rounded-full" 
+                             style="width: {% widthratio performance_distribution.struggling total_enrollments 100 %}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Performing Students -->
+        <div class="bg-gray-800 rounded-xl p-6">
+            <h2 class="text-xl font-bold mb-6">🏆 Top Performing Students</h2>
+            {% if top_students %}
+            <div class="space-y-4">
+                {% for student in top_students %}
+                <div class="flex items-center justify-between p-3 bg-gray-900 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                            <span class="font-bold">{{ student.username|first|upper }}</span>
+                        </div>
+                        <div>
+                            <p class="font-medium">{{ student.username }}</p>
+                            <p class="text-xs text-gray-400">{{ student.email }}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-lg font-bold text-green-400">{{ student.avg_progress }}%</p>
+                        <p class="text-xs text-gray-400">{{ student.completed_count }}/{{ student.courses_count }} completed</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-400 text-center py-4">No data available</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Course Popularity and Struggling Students -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Most Popular Courses -->
+        <div class="bg-gray-800 rounded-xl p-6">
+            <h2 class="text-xl font-bold mb-6">📚 Most Popular Courses</h2>
+            {% if course_popularity %}
+            <div class="space-y-4">
+                {% for course in course_popularity %}
+                <div class="p-3 bg-gray-900 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-medium">{{ course.title|truncatechars:40 }}</h3>
+                        <span class="bg-primary-600 px-2 py-1 rounded text-xs">{{ course.enrollment_count }} students</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-xs text-center">
+                        <div>
+                            <p class="text-gray-400">Enrolled</p>
+                            <p class="font-bold">{{ course.enrollment_count }}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400">Completed</p>
+                            <p class="font-bold text-green-400">{{ course.completed_count }}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400">Avg Progress</p>
+                            <p class="font-bold">{{ course.avg_progress|floatformat:0 }}%</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-400 text-center py-4">No course data available</p>
+            {% endif %}
+        </div>
+
+        <!-- Students Needing Attention -->
+        <div class="bg-gray-800 rounded-xl p-6">
+            <h2 class="text-xl font-bold mb-6">⚠️ Students Needing Attention</h2>
+            {% if struggling_students %}
+            <div class="space-y-4">
+                {% for student in struggling_students %}
+                <div class="flex items-center justify-between p-3 bg-gray-900 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
+                            <span class="font-bold">{{ student.username|first|upper }}</span>
+                        </div>
+                        <div>
+                            <p class="font-medium">{{ student.username }}</p>
+                            <p class="text-xs text-gray-400">{{ student.email }}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-lg font-bold text-red-400">{{ student.avg_progress }}%</p>
+                        <p class="text-xs text-gray-400">{{ student.courses_count }} courses</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mt-4 text-center">
+                <a href="{% url 'manage_users' %}?role=student" class="text-primary-400 hover:text-primary-300 text-sm">
+                    View all students →
+                </a>
+            </div>
+            {% else %}
+            <p class="text-gray-400 text-center py-4">No struggling students found</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-8">
+        <h2 class="text-xl font-bold mb-6">📊 Recent Student Activity</h2>
+        {% if recent_activity %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="text-left text-gray-400 border-b border-gray-700">
+                        <th class="pb-3">Student</th>
+                        <th class="pb-3">Course</th>
+                        <th class="pb-3">Action</th>
+                        <th class="pb-3">Date</th>
+                        <th class="pb-3">Progress</th>
+                        <th class="pb-3">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in recent_activity %}
+                    <tr class="border-b border-gray-700 hover:bg-gray-750">
+                        <td class="py-3">{{ activity.student }}</td>
+                        <td class="py-3">{{ activity.course|truncatechars:30 }}</td>
+                        <td class="py-3">
+                            <span class="px-2 py-1 bg-blue-900 text-blue-300 rounded text-xs">Enrolled</span>
+                        </td>
+                        <td class="py-3">{{ activity.date|date:"M d, Y" }}</td>
+                        <td class="py-3">
+                            <div class="flex items-center space-x-2">
+                                <span>{{ activity.progress|default:"0" }}%</span>
+                                <div class="w-16 bg-gray-700 rounded-full h-2">
+                                    <div class="bg-primary-600 h-2 rounded-full" style="width: {{ activity.progress|default:"0" }}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-1 rounded text-xs 
+                                {% if activity.status == 'completed' %}bg-green-900 text-green-300
+                                {% else %}bg-blue-900 text-blue-300{% endif %}">
+                                {{ activity.status|title }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-4 text-center text-gray-400">No recent activity</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-400 text-center py-4">No recent activity</p>
+        {% endif %}
+    </div>
+
+    <!-- Export Script -->
+    <script>
+        function exportData() {
+            // Get current date for filename
+            const date = new Date().toISOString().split('T')[0];
+            
+            // Prepare data for export
+            const data = {
+                total_students: {{ total_students }},
+                total_enrollments: {{ total_enrollments }},
+                avg_progress: {{ avg_progress }},
+                completed_courses: {{ completed_courses }},
+                performance_distribution: {{ performance_distribution|safe }},
+                date_exported: new Date().toISOString()
+            };
+            
+            // Create CSV content
+            let csv = "Metric,Value\n";
+            csv += `Total Students,${data.total_students}\n`;
+            csv += `Total Enrollments,${data.total_enrollments}\n`;
+            csv += `Average Progress,${data.avg_progress}%\n`;
+            csv += `Completed Courses,${data.completed_courses}\n`;
+            csv += `Excellent Performance,${data.performance_distribution.excellent}\n`;
+            csv += `Good Performance,${data.performance_distribution.good}\n`;
+            csv += `Average Performance,${data.performance_distribution.average}\n`;
+            csv += `Struggling,${data.performance_distribution.struggling}\n`;
+            
+            // Download CSV
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `student_analytics_${date}.csv`;
+            a.click();
+        }
+    </script>
+</div>
+{% endblock %}

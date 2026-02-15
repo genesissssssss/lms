@@ -1,0 +1,94 @@
+from django.shortcuts import render, redirect
+from django.contrib.auth import login, authenticate, logout
+from django.contrib import messages
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.views.generic import CreateView, FormView
+from django.urls import reverse_lazy
+from .models import UserProfile
+
+class SignUpView(CreateView):
+    """User registration view"""
+    form_class = UserCreationForm
+    template_name = 'accounts/signup.html'
+
+    def form_valid(self, form):
+        # First, save the form to create the user
+        user = form.save()
+        
+        # Create or get user profile
+        UserProfile.objects.get_or_create(
+            user=user,
+            defaults={'role': 'student'}
+        )
+        
+        # Log the user in
+        login(self.request, user)
+        messages.success(self.request, 'Account created successfully!')
+        
+        # Redirect based on role
+        if hasattr(user, 'profile') and user.profile.role == 'admin':
+            return redirect('admin_dashboard')
+        else:
+            return redirect('student_dashboard')
+
+class SignInView(FormView):
+    """User login view"""
+    form_class = AuthenticationForm
+    template_name = 'accounts/signin.html'
+    
+    def form_valid(self, form):
+        # Get the authenticated user
+        user = form.get_user()
+        
+        # Log the user in
+        from django.contrib.auth import login
+        login(self.request, user)
+        from django.contrib import messages
+        messages.success(self.request, f'Welcome back, {user.username}!')
+        
+        # IMPORTANT: Check if user has profile (try both names for compatibility)
+        profile = None
+        if hasattr(user, 'profile'):
+            profile = user.profile
+        elif hasattr(user, 'userprofile'):
+            profile = user.userprofile
+        else:
+            # If no profile, create one with default role 'student'
+            from .models import UserProfile
+            profile = UserProfile.objects.create(user=user, role='student')
+        
+        # Redirect based on role
+        from django.shortcuts import redirect
+        if profile.role == 'admin':
+            return redirect('admin_dashboard')
+        else:
+            return redirect('student_dashboard')
+
+class = AuthenticationForm
+    template_name = 'accounts/signin.html'
+    
+    def form_valid(self, form):
+        # Get the authenticated user
+        user = form.get_user()
+        
+        # Log the user in
+        login(self.request, user)
+        messages.success(self.request, f'Welcome back, {user.username}!')
+        
+        # IMPORTANT: Check if user has userprofile
+        if hasattr(user, 'profile'):
+            if user.profile.role == 'admin':
+                return redirect('admin_dashboard')
+            else:
+                return redirect('student_dashboard')
+        else:
+            # If no userprofile, default to student dashboard
+            # Also create a userprofile for them
+            UserProfile.objects.create(user=user, role='student')
+            return redirect('student_dashboard')
+
+def signout(request):
+    """User logout view"""
+    logout(request)
+    messages.success(request, 'You have been logged out successfully.')
+    return redirect('home')

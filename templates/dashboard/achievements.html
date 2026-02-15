@@ -1,0 +1,217 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}My Achievements - Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="py-8 pb-32">  <!-- Added padding for fixed tips box -->
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold dark:text-gray-900">My Learning Achievements</h1>
+            <p class="text-gray-400 dark:text-gray-600">Track your progress and earn badges</p>
+        </div>
+        <a href="{% url 'student_dashboard' %}" class="border border-gray-600 hover:border-primary-400 px-4 py-2 rounded-lg transition">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-gray-800 dark:bg-gray-100 p-6 rounded-xl">
+            <h3 class="text-gray-400 dark:text-gray-600 text-sm mb-2">Enrolled Courses</h3>
+            <p class="text-3xl font-bold dark:text-gray-900">{{ total_enrolled|default:"0" }}</p>
+        </div>
+        
+        <div class="bg-gray-800 dark:bg-gray-100 p-6 rounded-xl">
+            <h3 class="text-gray-400 dark:text-gray-600 text-sm mb-2">Completed</h3>
+            <p class="text-3xl font-bold text-green-400 dark:text-green-600">{{ completed_courses|default:"0" }}</p>
+        </div>
+        
+        <div class="bg-gray-800 dark:bg-gray-100 p-6 rounded-xl">
+            <h3 class="text-gray-400 dark:text-gray-600 text-sm mb-2">In Progress</h3>
+            <p class="text-3xl font-bold text-blue-400 dark:text-blue-600">{{ in_progress|default:"0" }}</p>
+        </div>
+        
+        <div class="bg-gray-800 dark:bg-gray-100 p-6 rounded-xl">
+            <h3 class="text-gray-400 dark:text-gray-600 text-sm mb-2">Avg Progress</h3>
+            <p class="text-3xl font-bold text-purple-400 dark:text-purple-600">{{ average_progress|default:"0" }}%</p>
+        </div>
+    </div>
+
+    <!-- Progress Summary -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-gray-800 dark:bg-gray-100 p-6 rounded-xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold dark:text-gray-900">Excellent Progress</h3>
+                <span class="text-2xl">🌟</span>
+            </div>
+            <p class="text-2xl font-bold text-green-400">{{ excellent_progress|default:"0" }}</p>
+            <p class="text-sm text-gray-400 dark:text-gray-600">Courses above 75%</p>
+        </div>
+        
+        <div class="bg-gray-800 dark:bg-gray-100 p-6 rounded-xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold dark:text-gray-900">Good Progress</h3>
+                <span class="text-2xl">📊</span>
+            </div>
+            <p class="text-2xl font-bold text-yellow-400">{{ good_progress|default:"0" }}</p>
+            <p class="text-sm text-gray-400 dark:text-gray-600">Courses between 50-75%</p>
+        </div>
+        
+        <div class="bg-gray-800 dark:bg-gray-100 p-6 rounded-xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold dark:text-gray-900">Needs Work</h3>
+                <span class="text-2xl">📝</span>
+            </div>
+            <p class="text-2xl font-bold text-red-400">{{ needs_work|default:"0" }}</p>
+            <p class="text-sm text-gray-400 dark:text-gray-600">Courses below 50%</p>
+        </div>
+    </div>
+
+    <!-- Achievement Badges -->
+    <h2 class="text-2xl font-bold mb-6 dark:text-gray-900">🏆 Achievement Badges</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {% for achievement in achievements %}
+        <div class="bg-gray-800 dark:bg-gray-100 rounded-xl p-6 {% if achievement.unlocked %}border-2 border-green-500{% endif %}">
+            <div class="flex items-start space-x-4">
+                <div class="w-16 h-16 {% if achievement.unlocked %}bg-green-600{% else %}bg-gray-700 dark:bg-gray-300{% endif %} rounded-lg flex items-center justify-center text-3xl">
+                    {{ achievement.icon }}
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-bold dark:text-gray-900 mb-1">{{ achievement.name }}</h3>
+                    <p class="text-sm text-gray-400 dark:text-gray-600 mb-3">{{ achievement.description }}</p>
+                    
+                    <!-- Progress bar -->
+                    <div class="w-full bg-gray-700 dark:bg-gray-300 rounded-full h-2 mb-2">
+                        <div class="bg-primary-600 h-2 rounded-full" 
+                             style="width: {% widthratio achievement.progress|default:0 achievement.total|default:1 100 %}%"></div>
+                    </div>
+                    
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-400 dark:text-gray-600">Progress: {{ achievement.progress|default:"0" }}/{{ achievement.total|default:"1" }}</span>
+                        {% if achievement.unlocked %}
+                        <span class="text-green-400 dark:text-green-600">✓ Unlocked</span>
+                        {% else %}
+                        <span class="text-gray-400 dark:text-gray-600">🔒 Locked</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-3 text-center py-8">
+            <p class="text-gray-400">No achievements available yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Course Progress Details -->
+    <h2 class="text-2xl font-bold mb-6 dark:text-gray-900">📚 Course Progress Details</h2>
+    <div class="bg-gray-800 dark:bg-gray-100 rounded-xl p-6 mb-8">
+        {% if enrollments %}
+        <div class="space-y-6">
+            {% for enrollment in enrollments %}
+            <div class="border-b border-gray-700 dark:border-gray-300 pb-6 last:border-0">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h3 class="font-bold dark:text-gray-900">{{ enrollment.course.title }}</h3>
+                        <p class="text-sm text-gray-400 dark:text-gray-600">{{ enrollment.course.level|default:"Beginner"|title }} • {{ enrollment.course.duration|default:"0" }} hours</p>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-xs 
+                        {% if enrollment.status == 'completed' %}bg-green-900 text-green-300 dark:bg-green-200 dark:text-green-800
+                        {% elif enrollment.status == 'enrolled' %}bg-blue-900 text-blue-300 dark:bg-blue-200 dark:text-blue-800
+                        {% else %}bg-yellow-900 text-yellow-300 dark:bg-yellow-200 dark:text-yellow-800{% endif %}">
+                        {{ enrollment.status|default:"Enrolled"|title }}
+                    </span>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="mb-2">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-400 dark:text-gray-600">Progress</span>
+                        <span class="font-bold dark:text-gray-900">{{ enrollment.progress|default:"0" }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-700 dark:bg-gray-300 rounded-full h-3">
+                        <div class="bg-primary-600 h-3 rounded-full" style="width: {{ enrollment.progress|default:"0" }}%"></div>
+                    </div>
+                </div>
+                
+                <!-- Course Stats -->
+                <div class="grid grid-cols-3 gap-4 mt-3">
+                    <div class="text-center">
+                        <p class="text-sm text-gray-400 dark:text-gray-600">Materials</p>
+                        <p class="font-bold dark:text-gray-900">{{ enrollment.course.materials.count|default:"0" }}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-400 dark:text-gray-600">Videos</p>
+                        <p class="font-bold dark:text-gray-900">{{ enrollment.course.videos.count|default:"0" }}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-400 dark:text-gray-600">Enrolled</p>
+                        <p class="font-bold dark:text-gray-900">{{ enrollment.enrolled_at|date:"M d, Y"|default:"Recently" }}</p>
+                    </div>
+                </div>
+                
+                <!-- Continue Button -->
+                <div class="mt-4">
+                    <a href="{% url 'course_detail' enrollment.course.id %}" 
+                       class="text-primary-400 dark:text-primary-600 hover:text-primary-300 dark:hover:text-primary-700 text-sm font-medium">
+                        Continue Learning →
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <div class="w-24 h-24 bg-gray-700 dark:bg-gray-300 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <span class="text-4xl">📚</span>
+            </div>
+            <p class="text-gray-400 dark:text-gray-600 mb-2">No courses enrolled yet</p>
+            <p class="text-sm text-gray-500 dark:text-gray-500 mb-4">Start your learning journey today!</p>
+            <a href="{% url 'course_list' %}" class="bg-primary-600 hover:bg-primary-700 px-6 py-3 rounded-lg transition inline-block">
+                Browse Courses
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activity Timeline -->
+    <h2 class="text-2xl font-bold mb-6 dark:text-gray-900">📅 Recent Activity</h2>
+    <div class="bg-gray-800 dark:bg-gray-100 rounded-xl p-6">
+        {% if recent_activity %}
+        <div class="space-y-4">
+            {% for activity in recent_activity %}
+            <div class="flex items-start space-x-4">
+                <div class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span class="text-xl">🏆</span>
+                </div>
+                <div class="flex-1">
+                    <p class="font-medium dark:text-gray-900">{{ activity.description }}</p>
+                    <p class="text-sm text-gray-400 dark:text-gray-600">{{ activity.date|date:"F j, Y"|default:"Recently" }}</p>
+                </div>
+                <a href="{% url 'course_detail' activity.course.id %}" 
+                   class="text-primary-400 dark:text-primary-600 hover:text-primary-300 dark:hover:text-primary-700 text-sm">
+                    View →
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-center text-gray-400 dark:text-gray-600 py-4">No recent activity</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Achievement Tips - Hidden on mobile -->
+<div class="hidden lg:block fixed bottom-24 right-4 max-w-xs z-40">  <!-- Added z-40 to not overlap theme toggle -->
+    <div class="bg-gray-800 dark:bg-gray-100 rounded-lg p-4 shadow-lg">
+        <h4 class="font-bold mb-2 dark:text-gray-900">💡 Achievement Tips</h4>
+        <ul class="text-sm text-gray-400 dark:text-gray-600 space-y-1">
+            <li>• Complete courses to earn badges</li>
+            <li>• Maintain progress above 75% for excellence</li>
+            <li>• Check back often for new achievements</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
