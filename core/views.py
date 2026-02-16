@@ -14,6 +14,18 @@ from django.db.models.functions import TruncMonth, TruncWeek
 from django.utils import timezone
 from datetime import timedelta
 
+def create_admin(request):
+    if not User.objects.filter(username='admin').exists():
+        user = User.objects.create_user(
+            username='admin',
+            email='admin@example.com',
+            password='admin123',
+            is_staff=True,
+            is_superuser=True
+        )
+        UserProfile.objects.create(user=user, role='admin')
+        return HttpResponse("Admin created!")
+    return HttpResponse("Admin already exists"
 
 class HomeView(TemplateView):
     """Home page view"""
