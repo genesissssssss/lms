@@ -1,24 +1,8 @@
-# Python
+venv/
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-.Python
-venv/
-env/
-ENV/
-.env
-
-# Django
-*.log
-local_settings.py
 db.sqlite3
-media/
-staticfiles/
-
-# VSCode
-.vscode/
-.idea/
-
-# Git
 .DS_Store
+.env
+staticfiles/
+media/
