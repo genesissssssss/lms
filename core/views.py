@@ -25,7 +25,7 @@ def create_admin(request):
         )
         UserProfile.objects.create(user=user, role='admin')
         return HttpResponse("Admin created!")
-    return HttpResponse("Admin already exists"
+    return HttpResponse("Admin already exists")
 
 class HomeView(TemplateView):
     """Home page view"""
