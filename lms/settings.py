@@ -61,23 +61,24 @@ TEMPLATES = [
 ]
 WSGI_APPLICATION = 'lms.wsgi.application'
 
-# Database configuration - use SQLite for local, PostgreSQL for production
 import sys
-if 'runserver' in sys.argv or DEBUG:
+
+# Check if DATABASE_URL exists in environment
+if 'DATABASE_URL' in os.environ:
+    # Production - use PostgreSQL from environment variable
+    DATABASES = {
+        'default': dj_database_url.config(
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+else:
     # Local development - SQLite
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
-    }
-else:
-    # Production - PostgreSQL from environment variable
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=config('DATABASE_URL'),
-            conn_max_age=600
-        )
     }
     
 AUTH_PASSWORD_VALIDATORS = [
