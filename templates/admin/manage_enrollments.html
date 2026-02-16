@@ -1,0 +1,132 @@
+<!-- templates/admin/manage_enrollments.html -->
+{% extends 'layouts/base.html' %}
+
+{% block title %}Manage Enrollments - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold">Manage Enrollments</h1>
+            <p class="text-gray-400">View and manage all student enrollments</p>
+        </div>
+        <a href="{% url 'admin_dashboard' %}" class="border border-gray-600 hover:border-primary-400 px-4 py-2 rounded-lg transition">
+            ← Back to Dashboard
+        </a>
+    </div>
+    
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-gray-800 p-6 rounded-xl">
+            <h3 class="text-gray-400 mb-2">Total Enrollments</h3>
+            <p class="text-3xl font-bold">{{ total_enrollments }}</p>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-xl">
+            <h3 class="text-gray-400 mb-2">Pending</h3>
+            <p class="text-3xl font-bold text-yellow-400">{{ pending_count }}</p>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-xl">
+            <h3 class="text-gray-400 mb-2">Active</h3>
+            <p class="text-3xl font-bold text-green-400">{{ active_count }}</p>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-xl">
+            <h3 class="text-gray-400 mb-2">Completed</h3>
+            <p class="text-3xl font-bold text-blue-400">{{ completed_count }}</p>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-8">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm text-gray-400 mb-2">Filter by Status</label>
+                <select name="status" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2">
+                    <option value="">All Status</option>
+                    <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="enrolled" {% if request.GET.status == 'enrolled' %}selected{% endif %}>Enrolled</option>
+                    <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm text-gray-400 mb-2">Filter by Course</label>
+                <select name="course" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2">
+                    <option value="">All Courses</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}" {% if request.GET.course == course.id|stringformat:"i" %}selected{% endif %}>
+                        {{ course.title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm text-gray-400 mb-2">Search Student</label>
+                <input type="text" name="search" value="{{ request.GET.search }}" 
+                       placeholder="Enter username..."
+                       class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2">
+            </div>
+            
+            <div class="flex items-end">
+                <button type="submit" class="bg-primary-600 hover:bg-primary-700 px-6 py-2 rounded-lg">
+                    Apply Filters
+                </button>
+                <a href="{% url 'manage_enrollments' %}" class="ml-2 border border-gray-600 hover:border-gray-500 px-6 py-2 rounded-lg">
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Enrollments Table -->
+    <div class="bg-gray-800 rounded-xl p-6">
+        <table class="w-full">
+            <thead>
+                <tr class="text-left text-gray-400 border-b border-gray-700">
+                    <th class="pb-3">Student</th>
+                    <th class="pb-3">Course</th>
+                    <th class="pb-3">Enrolled Date</th>
+                    <th class="pb-3">Progress</th>
+                    <th class="pb-3">Status</th>
+                    <th class="pb-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enrollment in enrollments %}
+                <tr class="border-b border-gray-700 hover:bg-gray-750">
+                    <td class="py-3">{{ enrollment.student.username }}</td>
+                    <td class="py-3">{{ enrollment.course.title|truncatechars:40 }}</td>
+                    <td class="py-3">{{ enrollment.enrolled_at|date:"M d, Y" }}</td>
+                    <td class="py-3">{{ enrollment.progress|default:"0" }}%</td>
+                    <td class="py-3">
+                        <form method="post" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="enrollment_id" value="{{ enrollment.id }}">
+                            <select name="status" onchange="this.form.submit()" 
+                                    class="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm">
+                                <option value="pending" {% if enrollment.status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="enrolled" {% if enrollment.status == 'enrolled' %}selected{% endif %}>Enrolled</option>
+                                <option value="completed" {% if enrollment.status == 'completed' %}selected{% endif %}>Completed</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td class="py-3">
+                        <a href="{% url 'student_analytics' enrollment.student.id %}" 
+                           class="text-primary-400 hover:text-primary-300 text-sm">
+                            Analytics
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="py-8 text-center text-gray-400">
+                        No enrollments found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

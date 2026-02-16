@@ -1,0 +1,258 @@
+<header class="bg-gray-800 dark:bg-gray-100 border-b border-gray-700 dark:border-gray-300">
+    <nav class="container mx-auto px-4 py-4">
+        <div class="flex justify-between items-center">
+            <!-- Logo -->
+            <a href="{% url 'home' %}" class="flex items-center space-x-2">
+                <div class="w-8 h-8 bg-primary-600 rounded-lg"></div>
+                <span class="text-xl font-bold dark:text-gray-900">CodeLearn</span>
+            </a>
+            
+            <!-- Navigation -->
+            <div class="flex items-center space-x-6">
+                {% if user.is_authenticated %}
+                    {% if user.userprofile.role == 'admin' or user.userprofile.role == 'instructor' %}
+                        <a href="{% url 'admin_dashboard' %}" class="hover:text-primary-400 dark:hover:text-primary-600 transition dark:text-gray-800">Dashboard</a>
+                    {% else %}
+                        <a href="{% url 'student_dashboard' %}" class="hover:text-primary-400 dark:hover:text-primary-600 transition dark:text-gray-800">Dashboard</a>
+                    {% endif %}
+                    
+                    <a href="{% url 'course_list' %}" class="hover:text-primary-400 dark:hover:text-primary-600 transition dark:text-gray-800">Courses</a>
+                    <a href="#" class="hover:text-primary-400 dark:hover:text-primary-600 transition dark:text-gray-800"></a>
+                    
+                    <!-- Theme Toggle (Header Version) 
+                    <div class="hidden md:flex items-center bg-gray-700 dark:bg-gray-300 rounded-full p-1">
+                        <button id="header-theme-light" class="theme-toggle-header px-2 py-1 rounded-full text-xs">
+                            <span class="text-sm">☀️</span>
+                        </button>
+                        <button id="header-theme-dark" class="theme-toggle-header px-2 py-1 rounded-full text-xs">
+                            <span class="text-sm">🌙</span>
+                        </button>
+                    </div>-->
+                    
+                    <!-- User info -->
+                    <div class="flex items-center space-x-2">
+                       
+                        <form method="post" action="{% url 'signout' %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="bg-gray-700 dark:bg-gray-300 hover:bg-gray-600 dark:hover:bg-gray-400 px-4 py-2 rounded-lg transition text-gray-100 dark:text-gray-900">
+                                Sign Out
+                            </button>
+                        </form>
+                    </div>
+                {% else %}
+                    <a href="{% url 'home' %}" class="hover:text-primary-400 dark:hover:text-primary-600 transition dark:text-gray-800">Home</a>
+                    <a href="{% url 'course_list' %}" class="hover:text-primary-400 dark:hover:text-primary-600 transition dark:text-gray-800">Courses</a>
+                    <a href="{% url 'signin' %}" class="hover:text-primary-400 dark:hover:text-primary-600 transition dark:text-gray-800">Sign In</a>
+                    
+                    <!-- Theme Toggle (For non-authenticated users) -->
+                    <div class="hidden md:flex items-center bg-gray-700 dark:bg-gray-300 rounded-full p-1">
+                        <button id="header-theme-light" class="theme-toggle-header px-2 py-1 rounded-full text-xs">
+                            <span class="text-sm">☀️</span>
+                        </button>
+                        <button id="header-theme-dark" class="theme-toggle-header px-2 py-1 rounded-full text-xs">
+                            <span class="text-sm">🌙</span>
+                        </button>
+                    </div>
+                    
+                    <a href="{% url 'signup' %}" class="bg-primary-600 hover:bg-primary-700 px-4 py-2 rounded-lg transition text-white">
+                        Get Started
+                    </a>
+                {% endif %}
+            </div>
+            
+            <!-- Mobile menu button -->
+            <button id="mobile-menu-button" class="md:hidden text-gray-400 dark:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="md:hidden hidden mt-4 pt-4 border-t border-gray-700 dark:border-gray-300">
+            {% if user.is_authenticated %}
+                <div class="space-y-3">
+                    {% if user.userprofile.role == 'admin' or user.userprofile.role == 'instructor' %}
+                        <a href="{% url 'admin_dashboard' %}" class="block hover:text-primary-400 dark:hover:text-primary-600 transition dark:text-gray-800 py-2">Dashboard</a>
+                    {% else %}
+                        <a href="{% url 'student_dashboard' %}" class="block hover:text-primary-400 dark:hover:text-primary-600 transition dark:text-gray-800 py-2">Dashboard</a>
+                    {% endif %}
+                    
+                    <a href="{% url 'course_list' %}" class="block hover:text-primary-400 dark:hover:text-primary-600 transition dark:text-gray-800 py-2">Courses</a>
+                    <a href="#" class="block hover:text-primary-400 dark:hover:text-primary-600 transition dark:text-gray-800 py-2">Profile</a>
+                    
+                    <!-- Mobile Theme Toggle -->
+                    <div class="flex items-center justify-center bg-gray-700 dark:bg-gray-300 rounded-full p-1 my-2">
+                        <button id="mobile-theme-light" class="theme-toggle-mobile px-3 py-1 rounded-full text-sm">
+                            ☀️ Light
+                        </button>
+                        <button id="mobile-theme-dark" class="theme-toggle-mobile px-3 py-1 rounded-full text-sm">
+                            🌙 Dark
+                        </button>
+                    </div>
+                    
+                    <div class="pt-2 border-t border-gray-700 dark:border-gray-300">
+                        <span class="block text-sm text-gray-400 dark:text-gray-600 mb-2">Welcome, {{ user.username }}</span>
+                        <form method="post" action="{% url 'signout' %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="w-full bg-gray-700 dark:bg-gray-300 hover:bg-gray-600 dark:hover:bg-gray-400 px-4 py-2 rounded-lg transition text-gray-100 dark:text-gray-900">
+                                Sign Out
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <div class="space-y-3">
+                    <a href="{% url 'home' %}" class="block hover:text-primary-400 dark:hover:text-primary-600 transition dark:text-gray-800 py-2">Home</a>
+                    <a href="{% url 'course_list' %}" class="block hover:text-primary-400 dark:hover:text-primary-600 transition dark:text-gray-800 py-2">Courses</a>
+                    <a href="{% url 'signin' %}" class="block hover:text-primary-400 dark:hover:text-primary-600 transition dark:text-gray-800 py-2">Sign In</a>
+                    
+                    <!-- Mobile Theme Toggle -->
+                    <div class="flex items-center justify-center bg-gray-700 dark:bg-gray-300 rounded-full p-1 my-2">
+                        <button id="mobile-theme-light" class="theme-toggle-mobile px-3 py-1 rounded-full text-sm">
+                            ☀️ Light
+                        </button>
+                        <button id="mobile-theme-dark" class="theme-toggle-mobile px-3 py-1 rounded-full text-sm">
+                            🌙 Dark
+                        </button>
+                    </div>
+                    
+                    <a href="{% url 'signup' %}" class="block bg-primary-600 hover:bg-primary-700 px-4 py-2 rounded-lg transition text-white text-center">
+                        Get Started
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </nav>
+</header>
+
+<!-- Theme Sync Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        if (mobileMenuButton && mobileMenu) {
+            mobileMenuButton.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+                // Toggle icon
+                const icon = mobileMenuButton.querySelector('svg');
+                if (mobileMenu.classList.contains('hidden')) {
+                    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>';
+                } else {
+                    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
+                }
+            });
+        }
+        
+        // Theme toggle synchronization
+        function setupThemeToggle(lightButtonId, darkButtonId, isMobile = false) {
+            const lightBtn = document.getElementById(lightButtonId);
+            const darkBtn = document.getElementById(darkButtonId);
+            const globalLightBtn = document.getElementById('theme-toggle-light');
+            const globalDarkBtn = document.getElementById('theme-toggle-dark');
+            
+            if (lightBtn && darkBtn && globalLightBtn && globalDarkBtn) {
+                // Click events
+                lightBtn.addEventListener('click', () => {
+                    globalLightBtn.click();
+                    updateThemeToggleButtons();
+                    if (isMobile && mobileMenu) {
+                        mobileMenu.classList.add('hidden');
+                        // Reset mobile menu icon
+                        const icon = mobileMenuButton.querySelector('svg');
+                        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>';
+                    }
+                });
+                
+                darkBtn.addEventListener('click', () => {
+                    globalDarkBtn.click();
+                    updateThemeToggleButtons();
+                    if (isMobile && mobileMenu) {
+                        mobileMenu.classList.add('hidden');
+                        // Reset mobile menu icon
+                        const icon = mobileMenuButton.querySelector('svg');
+                        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>';
+                    }
+                });
+            }
+        }
+        
+        // Update all theme toggle buttons
+        function updateThemeToggleButtons() {
+            const theme = localStorage.getItem('lms-theme') || 'dark';
+            const isDark = theme === 'dark';
+            
+            // Update all header theme buttons
+            document.querySelectorAll('.theme-toggle-header, .theme-toggle-mobile').forEach(btn => {
+                const isLightBtn = btn.textContent.includes('☀️') || btn.textContent.includes('Light');
+                
+                if (isDark) {
+                    if (isLightBtn) {
+                        btn.classList.remove('bg-primary-600', 'dark:bg-primary-500', 'text-white');
+                        btn.classList.add('bg-transparent', 'text-gray-400', 'dark:text-gray-600');
+                    } else {
+                        btn.classList.remove('bg-transparent', 'text-gray-400', 'dark:text-gray-600');
+                        btn.classList.add('bg-primary-600', 'dark:bg-primary-500', 'text-white');
+                    }
+                } else {
+                    if (isLightBtn) {
+                        btn.classList.remove('bg-transparent', 'text-gray-400', 'dark:text-gray-600');
+                        btn.classList.add('bg-primary-600', 'dark:bg-primary-500', 'text-white');
+                    } else {
+                        btn.classList.remove('bg-primary-600', 'dark:bg-primary-500', 'text-white');
+                        btn.classList.add('bg-transparent', 'text-gray-400', 'dark:text-gray-600');
+                    }
+                }
+            });
+        }
+        
+        // Setup all theme toggles
+        setupThemeToggle('header-theme-light', 'header-theme-dark');
+        setupThemeToggle('mobile-theme-light', 'mobile-theme-dark', true);
+        
+        // Initialize theme toggle buttons on page load
+        updateThemeToggleButtons();
+        
+        // Listen for theme changes from global script
+        document.addEventListener('themeChanged', updateThemeToggleButtons);
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            if (mobileMenu && mobileMenuButton && 
+                !mobileMenu.contains(event.target) && 
+                !mobileMenuButton.contains(event.target) &&
+                !mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.add('hidden');
+                // Reset mobile menu icon
+                const icon = mobileMenuButton.querySelector('svg');
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>';
+            }
+        });
+    });
+</script>
+
+<!-- Mobile Menu Animation -->
+<style>
+    #mobile-menu {
+        transition: all 0.3s ease-in-out;
+    }
+    
+    /* Ensure theme toggle buttons are properly styled on initial load */
+    .theme-toggle-header, .theme-toggle-mobile {
+        transition: all 0.3s ease;
+    }
+    
+    /* Dark theme by default */
+    .dark .theme-toggle-header.bg-transparent,
+    .dark .theme-toggle-mobile.bg-transparent {
+        color: #9ca3af;
+    }
+    
+    /* Light theme adjustments */
+    :root:not(.dark) .theme-toggle-header.bg-transparent,
+    :root:not(.dark) .theme-toggle-mobile.bg-transparent {
+        color: #6b7280;
+    }
+</style>

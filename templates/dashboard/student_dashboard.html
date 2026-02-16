@@ -1,0 +1,298 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Student Dashboard - LMS{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <!-- Header with Theme Toggle -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold dark:text-white text-gray-900">Welcome back, {{ user.username }}!</h1>
+            <p class="text-gray-400 dark:text-gray-600">Student Dashboard</p>
+        </div>
+        <div class="flex items-center space-x-4">
+            <!-- Theme Toggle -->
+            <div class="flex items-center bg-gray-800 dark:bg-gray-200 rounded-full p-1">
+                <button id="theme-toggle-light" class="px-3 py-1 rounded-full bg-transparent text-gray-400 dark:text-gray-600 text-sm">
+                    ☀️ Light
+                </button>
+                <button id="theme-toggle-dark" class="px-3 py-1 rounded-full bg-primary-600 dark:bg-primary-500 text-white text-sm">
+                    🌙 Dark
+                </button>
+            </div>
+            <a href="{% url 'course_list' %}" class="bg-primary-600 hover:bg-primary-700 px-4 py-2 rounded-lg transition">
+                Browse All Courses
+            </a>
+        </div>
+    </div>
+    
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-gray-800 dark:bg-gray-100 p-6 rounded-xl hover:bg-gray-750 dark:hover:bg-gray-200 transition">
+            <h3 class="text-lg font-medium text-gray-400 dark:text-gray-600 mb-2">Enrolled Courses</h3>
+            <p class="text-3xl font-bold dark:text-gray-900">{{ total_enrolled|default:"0" }}</p>
+        </div>
+        
+        <div class="bg-gray-800 dark:bg-gray-100 p-6 rounded-xl hover:bg-gray-750 dark:hover:bg-gray-200 transition">
+            <h3 class="text-lg font-medium text-gray-400 dark:text-gray-600 mb-2">Completed</h3>
+            <p class="text-3xl font-bold dark:text-gray-900">{{ completed_courses|default:"0" }}</p>
+        </div>
+        
+        <div class="bg-gray-800 dark:bg-gray-100 p-6 rounded-xl hover:bg-gray-750 dark:hover:bg-gray-200 transition">
+            <h3 class="text-lg font-medium text-gray-400 dark:text-gray-600 mb-2">In Progress</h3>
+            <p class="text-3xl font-bold dark:text-gray-900">{{ in_progress_courses|default:"0" }}</p>
+        </div>
+        
+        <div class="bg-gray-800 dark:bg-gray-100 p-6 rounded-xl hover:bg-gray-750 dark:hover:bg-gray-200 transition">
+            <h3 class="text-lg font-medium text-gray-400 dark:text-gray-600 mb-2">Overall Progress</h3>
+            <p class="text-3xl font-bold dark:text-gray-900">{{ overall_progress|default:"0" }}%</p>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <a href="{% url 'course_list' %}" class="bg-gray-800 dark:bg-gray-100 p-6 rounded-xl hover:bg-gray-750 dark:hover:bg-gray-200 transition group">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center group-hover:bg-primary-700">
+                    <span class="text-xl">🔍</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold dark:text-gray-900">Browse Courses</h3>
+                    <p class="text-gray-400 dark:text-gray-600 text-sm">Explore available courses</p>
+                </div>
+            </div>
+        </a>
+        
+        
+        </a>
+        
+        <a href="{% url 'student_achievements' %}" class="bg-gray-800 dark:bg-gray-100 p-6 rounded-xl hover:bg-gray-750 dark:hover:bg-gray-200 transition group">
+    <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center group-hover:bg-purple-700">
+            <span class="text-xl">🏆</span>
+        </div>
+        <div>
+            <h3 class="text-lg font-bold dark:text-gray-900">Achievements</h3>
+            <p class="text-gray-400 dark:text-gray-600 text-sm">View your progress and badges</p>
+        </div>
+    </div>
+</a>
+    </div>
+    
+    <!-- Enrolled Courses -->
+    <div class="bg-gray-800 dark:bg-gray-100 rounded-xl p-6 mb-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold dark:text-gray-900">My Courses</h2>
+            <a href="{% url 'course_list' %}" class="text-primary-400 dark:text-primary-600 hover:text-primary-300 dark:hover:text-primary-700 text-sm">
+                View All →
+            </a>
+        </div>
+        
+        {% if enrolled_courses %}
+        <div class="space-y-4">
+            {% for enrollment in enrolled_courses %}
+            <div class="flex items-center justify-between p-4 bg-gray-900 dark:bg-gray-200 rounded-lg hover:bg-gray-850 dark:hover:bg-gray-300 transition">
+                <div class="flex items-center space-x-4">
+                    {% if enrollment.course.thumbnail %}
+                    <img src="{{ enrollment.course.thumbnail.url }}" alt="{{ enrollment.course.title }}" 
+                         class="w-16 h-16 object-cover rounded-lg">
+                    {% else %}
+                    <div class="w-16 h-16 bg-primary-600 rounded-lg flex items-center justify-center">
+                        <span class="text-2xl">📚</span>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <h3 class="font-medium dark:text-gray-900">{{ enrollment.course.title }}</h3>
+                        <div class="flex items-center space-x-4 text-sm text-gray-400 dark:text-gray-600">
+                            <span>Progress: {{ enrollment.progress|default:"0" }}%</span>
+                            <span>Status: {{ enrollment.status|title|default:"Enrolled" }}</span>
+                            <span>Instructor: {{ enrollment.course.instructor.username }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="w-32 bg-gray-700 dark:bg-gray-300 rounded-full h-2">
+                        <div class="bg-primary-600 h-2 rounded-full" style="width: {{ enrollment.progress|default:"0" }}%"></div>
+                    </div>
+                    <a href="{% url 'course_detail' enrollment.course.id %}" class="text-primary-400 dark:text-primary-600 hover:text-primary-300 dark:hover:text-primary-700">
+                        Continue →
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-8">
+            <div class="w-24 h-24 bg-gray-700 dark:bg-gray-300 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <span class="text-4xl">📚</span>
+            </div>
+            <p class="text-gray-400 dark:text-gray-600 mb-4">You haven't enrolled in any courses yet.</p>
+            <a href="{% url 'course_list' %}" class="text-primary-400 dark:text-primary-600 hover:text-primary-300 dark:hover:text-primary-700">
+                Browse available courses →
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Available Courses -->
+    <div class="bg-gray-800 dark:bg-gray-100 rounded-xl p-6 mb-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold dark:text-gray-900">Recommended Courses</h2>
+            <a href="{% url 'course_list' %}" class="text-primary-400 dark:text-primary-600 hover:text-primary-300 dark:hover:text-primary-700 text-sm">
+                View All →
+            </a>
+        </div>
+        
+        {% if available_courses %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for course in available_courses %}
+            <div class="bg-gray-900 dark:bg-gray-200 rounded-lg overflow-hidden hover:bg-gray-850 dark:hover:bg-gray-300 transition transform hover:-translate-y-1">
+                {% if course.thumbnail %}
+                <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" class="w-full h-48 object-cover">
+                {% else %}
+                <div class="w-full h-48 bg-gradient-to-r from-primary-600 to-primary-800 flex items-center justify-center">
+                    <span class="text-4xl">📚</span>
+                </div>
+                {% endif %}
+                <div class="p-4">
+                    <h3 class="font-bold mb-2 dark:text-gray-900">{{ course.title }}</h3>
+                    <p class="text-sm text-gray-400 dark:text-gray-600 mb-4">{{ course.description|truncatechars:100|default:"No description available" }}</p>
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="text-sm text-gray-400 dark:text-gray-600">
+                            <span>{{ course.duration|default:"0" }}h • {{ course.level|title|default:"Beginner" }}</span>
+                        </div>
+                        <span class="text-sm font-bold dark:text-gray-900">
+                            {% if course.price and course.price > 0 %}
+                            ${{ course.price }}
+                            {% else %}
+                            <span class="text-green-400 dark:text-green-600">FREE</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="flex justify-between">
+                        <a href="{% url 'course_detail' course.id %}" class="text-primary-400 dark:text-primary-600 hover:text-primary-300 dark:hover:text-primary-700 text-sm">
+                            View Details
+                        </a>
+                        <a href="{% url 'enroll_course' course.id %}" class="bg-primary-600 hover:bg-primary-700 px-3 py-1 rounded text-sm text-white">
+                            Enroll Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-8">
+            <div class="w-24 h-24 bg-gray-700 dark:bg-gray-300 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <span class="text-4xl">✅</span>
+            </div>
+            <p class="text-gray-400 dark:text-gray-600">No new courses available at the moment.</p>
+            <p class="text-gray-500 dark:text-gray-500 text-sm mt-2">You're enrolled in all available courses!</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Upcoming Deadlines 
+    <div class="bg-gray-800 dark:bg-gray-100 rounded-xl p-6">
+        <h2 class="text-2xl font-bold dark:text-gray-900 mb-6">Upcoming Deadlines</h2>
+        <div class="space-y-4">
+            <div class="flex items-center justify-between p-4 bg-gray-900 dark:bg-gray-200 rounded-lg">
+                <div>
+                    <h3 class="font-medium dark:text-gray-900">Python Assignment 1</h3>
+                    <p class="text-sm text-gray-400 dark:text-gray-600">Due: Tomorrow, 11:59 PM</p>
+                </div>
+                <span class="px-3 py-1 bg-yellow-900 dark:bg-yellow-200 text-yellow-300 dark:text-yellow-800 rounded-full text-sm">
+                    Urgent
+                </span>
+            </div>
+            
+            <div class="flex items-center justify-between p-4 bg-gray-900 dark:bg-gray-200 rounded-lg">
+                <div>
+                    <h3 class="font-medium dark:text-gray-900">Web Development Project</h3>
+                    <p class="text-sm text-gray-400 dark:text-gray-600">Due: 3 days</p>
+                </div>
+                <span class="px-3 py-1 bg-green-900 dark:bg-green-200 text-green-300 dark:text-green-800 rounded-full text-sm">
+                    On Track
+                </span>
+            </div>
+            
+            <div class="text-center py-4">
+                <a href="#" class="text-primary-400 dark:text-primary-600 hover:text-primary-300 dark:hover:text-primary-700">
+                    View all assignments →
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+-->
+
+<!-- Theme Toggle Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const lightModeBtn = document.getElementById('theme-toggle-light');
+    const darkModeBtn = document.getElementById('theme-toggle-dark');
+    const htmlElement = document.documentElement;
+    
+    // Check for saved theme preference or default to dark
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    setTheme(savedTheme);
+    
+    // Light mode button click
+    lightModeBtn.addEventListener('click', function() {
+        setTheme('light');
+        localStorage.setItem('theme', 'light');
+    });
+    
+    // Dark mode button click
+    darkModeBtn.addEventListener('click', function() {
+        setTheme('dark');
+        localStorage.setItem('theme', 'dark');
+    });
+    
+    function setTheme(theme) {
+        if (theme === 'light') {
+            htmlElement.classList.remove('dark');
+            lightModeBtn.classList.remove('bg-transparent', 'text-gray-400');
+            lightModeBtn.classList.add('bg-primary-600', 'text-white');
+            darkModeBtn.classList.remove('bg-primary-600', 'text-white');
+            darkModeBtn.classList.add('bg-transparent', 'text-gray-400');
+        } else {
+            htmlElement.classList.add('dark');
+            darkModeBtn.classList.remove('bg-transparent', 'text-gray-400');
+            darkModeBtn.classList.add('bg-primary-600', 'text-white');
+            lightModeBtn.classList.remove('bg-primary-600', 'text-white');
+            lightModeBtn.classList.add('bg-transparent', 'text-gray-400');
+        }
+    }
+});
+</script>
+
+<style>
+/* Smooth transitions for theme switching */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Base theme colors */
+:root {
+    --bg-primary: #1f2937;
+    --bg-secondary: #111827;
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+}
+
+.dark {
+    --bg-primary: #f9fafb;
+    --bg-secondary: #f3f4f6;
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+}
+
+/* Apply theme variables */
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+</style>
+{% endblock %}

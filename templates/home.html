@@ -1,0 +1,108 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block title %}LMS - Master Coding Skills{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="py-12 md:py-20">
+    <div class="grid md:grid-cols-2 gap-12 items-center">
+        <!-- Left Content -->
+        <div>
+            <!-- Badge -->
+            <div class="inline-block bg-primary-600/20 text-primary-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
+                New courses added every week
+            </div>
+            
+            <!-- Main Heading -->
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+                Master Coding Skills for 
+                <span class="text-primary-500">Your Dream Career</span>
+            </h1>
+            
+            <!-- Description -->
+            <p class="text-lg text-gray-400 dark:text-gray-600 mb-8 max-w-lg">
+                Learn from industry experts with hands-on projects, real-world challenges, and a supportive community. Start your coding journey today.
+            </p>
+            
+            <!-- CTA Buttons -->
+            <div class="flex flex-wrap gap-4 mb-10">
+                <a href="{% url 'signup' %}" class="bg-primary-600 hover:bg-primary-700 px-8 py-4 rounded-lg font-medium transition text-white">
+                    Start Learning
+                </a>
+               
+            </div>
+            
+            <!-- Stats -->
+            <div class="grid grid-cols-3 gap-6 mb-8">
+                <div>
+                    <div class="text-2xl font-bold">50K+</div>
+                    <div class="text-sm text-gray-400 dark:text-gray-600">Active Students</div>
+                </div>
+                
+                <div>
+                    <div class="text-2xl font-bold">4.9/5</div>
+                    <div class="text-sm text-gray-400 dark:text-gray-600">Student Rating</div>
+                </div>
+            </div>
+            
+            <!-- Features -->
+            <div class="flex flex-wrap gap-6">
+                <div class="flex items-center gap-2">
+                    <span class="text-primary-500 text-xl">📜</span>
+                    <span class="text-sm text-gray-300 dark:text-gray-700">Certificate</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-500">Earn on completion</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-primary-500 text-xl">📚</span>
+                    <span class="text-sm text-gray-300 dark:text-gray-700">500+ Courses</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-500">All levels</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Content - Hero Image/Illustration -->
+        <div class="relative hidden md:block">
+            <div class="relative z-10">
+                <!-- Main illustration/image -->
+                <div class="bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl p-1">
+                    <div class="bg-gray-900 dark:bg-gray-100 rounded-2xl p-2">
+                        <img src="{% static 'images/images.jpg' %}" alt="Coding Hero" class="w-full h-auto rounded-lg"> -->
+                    </div>
+                </div>
+                
+                <!-- Floating card 1 - Project-based Learning -->
+                <div class="absolute -top-6 -right-6 bg-gray-800 dark:bg-gray-200 p-4 rounded-xl shadow-xl">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                            <span class="text-xl">✓</span>
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold">Project-based</div>
+                            <div class="text-xs text-gray-400 dark:text-gray-600">Learning</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Floating card 2 - Student Rating -->
+                <div class="absolute -bottom-6 -left-6 bg-gray-800 dark:bg-gray-200 p-4 rounded-xl shadow-xl">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
+                            <span class="text-xl">⭐</span>
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold">4.9/5 Rating</div>
+                            <div class="text-xs text-gray-400 dark:text-gray-600">From 50K+ students</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Background decoration -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-primary-600/20 rounded-full blur-3xl"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Rest of your template remains the same... -->
+{% endblock %}

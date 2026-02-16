@@ -1,0 +1,231 @@
+<!-- templates/admin/add_video.html -->
+{% extends 'layouts/base.html' %}
+
+{% block title %}Add Video - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="py-8 max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold">Add Course Video</h1>
+            <p class="text-gray-400">Upload video content for: {{ course.title }}</p>
+        </div>
+        <div class="space-x-2">
+            <a href="{% url 'course_detail' course.id %}" class="border border-gray-600 hover:border-primary-400 px-4 py-2 rounded-lg transition">
+                ← Back to Course
+            </a>
+            <a href="{% url 'admin_dashboard' %}" class="border border-gray-600 hover:border-primary-400 px-4 py-2 rounded-lg transition">
+                Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Course Info -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-8">
+        <div class="flex items-center space-x-4 mb-4">
+            {% if course.thumbnail %}
+            <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" 
+                 class="w-16 h-16 object-cover rounded">
+            {% else %}
+            <div class="w-16 h-16 bg-primary-600 rounded flex items-center justify-center">
+                <span class="text-2xl">📚</span>
+            </div>
+            {% endif %}
+            <div>
+                <h2 class="text-xl font-bold">{{ course.title }}</h2>
+                <p class="text-gray-400">{{ course.description|truncatechars:100 }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="bg-gray-800 rounded-xl p-6">
+        <h2 class="text-2xl font-bold mb-6">Upload New Video</h2>
+        
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="bg-red-900 border border-red-700 text-red-300 px-4 py-3 rounded-lg">
+                <p>Please correct the errors below:</p>
+                <ul class="list-disc list-inside mt-2">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <!-- Title -->
+            <div>
+                <label for="{{ form.title.id_for_label }}" class="block text-gray-300 mb-2">
+                    Video Title *
+                </label>
+                {{ form.title }}
+                <p class="text-sm text-gray-500 mt-1">Give a descriptive title for this video</p>
+            </div>
+            
+            <!-- Description -->
+            <div>
+                <label for="{{ form.description.id_for_label }}" class="block text-gray-300 mb-2">
+                    Description
+                </label>
+                {{ form.description }}
+                <p class="text-sm text-gray-500 mt-1">Brief description of what this video covers</p>
+            </div>
+            
+            <!-- Video Options -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Video File Upload -->
+                <div>
+                    <label for="{{ form.video_file.id_for_label }}" class="block text-gray-300 mb-2">
+                        Upload Video File
+                    </label>
+                    <div class="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center hover:border-primary-500 transition">
+                        {{ form.video_file }}
+                        <div class="mt-4">
+                            <span class="text-gray-400">📹 Upload video file</span>
+                            <p class="text-sm text-gray-500 mt-2">Supported: MP4, AVI, MOV (Max 100MB)</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- OR -->
+                <div class="flex items-center justify-center">
+                    <div class="text-gray-500">OR</div>
+                </div>
+                
+                <!-- Video URL -->
+                <div>
+                    <label for="{{ form.video_url.id_for_label }}" class="block text-gray-300 mb-2">
+                        Video URL (YouTube/Vimeo)
+                    </label>
+                    {{ form.video_url }}
+                    <p class="text-sm text-gray-500 mt-1">Paste YouTube or Vimeo URL</p>
+                    <div class="mt-4 p-3 bg-gray-900 rounded-lg">
+                        <p class="text-sm text-gray-400">Supported URLs:</p>
+                        <ul class="text-xs text-gray-500 list-disc list-inside mt-1">
+                            <li>YouTube: https://youtube.com/watch?v=...</li>
+                            <li>Vimeo: https://vimeo.com/...</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Duration -->
+            <div>
+                <label for="{{ form.duration.id_for_label }}" class="block text-gray-300 mb-2">
+                    Video Duration (minutes)
+                </label>
+                {{ form.duration }}
+                <p class="text-sm text-gray-500 mt-1">Enter duration in minutes (e.g., 15.5 for 15 minutes 30 seconds)</p>
+            </div>
+            
+            <!-- Buttons -->
+            <div class="flex justify-end space-x-4 pt-6 border-t border-gray-700">
+                <a href="{% url 'course_detail' course.id %}" 
+                   class="px-6 py-3 border border-gray-600 rounded-lg hover:border-gray-500 transition">
+                    Cancel
+                </a>
+                <button type="submit" 
+                        class="px-6 py-3 bg-primary-600 rounded-lg hover:bg-primary-700 transition">
+                    Upload Video
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Existing Videos -->
+    {% if course.videos.all %}
+    <div class="bg-gray-800 rounded-xl p-6 mt-8">
+        <h2 class="text-2xl font-bold mb-6">Existing Videos</h2>
+        
+        <div class="space-y-4">
+            {% for video in course.videos.all %}
+            <div class="bg-gray-900 p-4 rounded-lg hover:bg-gray-850 transition">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center">
+                            <span class="text-xl">📹</span>
+                        </div>
+                        <div>
+                            <h3 class="font-bold">{{ video.title|truncatechars:50 }}</h3>
+                            <p class="text-sm text-gray-400">{{ video.description|truncatechars:80 }}</p>
+                        </div>
+                    </div>
+                    <div class="text-xs">
+                        {% if video.duration %}
+                            <span class="px-2 py-1 rounded bg-gray-800">{{ video.duration }} min</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="flex justify-between items-center text-xs text-gray-500">
+                    <div>
+                        {% if video.video_url %}
+                            <span class="inline-flex items-center">
+                                <span class="mr-1">🔗</span> External Video
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center">
+                                <span class="mr-1">📁</span> Uploaded File
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="space-x-3">
+                        {% if video.video_url %}
+                            <a href="{{ video.video_url }}" 
+                               class="text-primary-400 hover:text-primary-300"
+                               target="_blank">
+                                Watch
+                            </a>
+                        {% else %}
+                            <a href="{{ video.video_file.url }}" 
+                               class="text-primary-400 hover:text-primary-300"
+                               target="_blank">
+                                Download
+                            </a>
+                        {% endif %}
+                        <a href="#" 
+                           class="text-red-400 hover:text-red-300"
+                           onclick="return confirm('Delete this video?')">
+                            Delete
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    /* Style form inputs to match dark theme */
+    input, select, textarea {
+        background-color: #1f2937;
+        border: 1px solid #374151;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        color: #f9fafb;
+        width: 100%;
+    }
+    
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+    }
+    
+    textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+</style>
+{% endblock %}

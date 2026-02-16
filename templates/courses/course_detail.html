@@ -1,0 +1,427 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ course.title }} - LMS{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <!-- Course Header -->
+    <div class="bg-gray-800 rounded-xl p-8 mb-8">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:space-x-8">
+            <!-- Course Thumbnail -->
+            <div class="lg:w-1/3 mb-6 lg:mb-0">
+                {% if course.thumbnail %}
+                <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" 
+                     class="w-full rounded-lg shadow-lg">
+                {% else %}
+                <div class="w-full h-64 bg-primary-600 rounded-lg flex items-center justify-center">
+                    <span class="text-6xl">📚</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Course Info -->
+            <div class="lg:w-2/3">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h1 class="text-3xl font-bold mb-2">{{ course.title }}</h1>
+                        <p class="text-gray-400">By {{ course.instructor.get_full_name|default:course.instructor.username }}</p>
+                    </div>
+                    <span class="bg-primary-600 text-white px-4 py-1 rounded-full">
+                        {{ course.level|title }}
+                    </span>
+                </div>
+                
+                <p class="text-lg mb-6">{{ course.description }}</p>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-gray-900 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">Duration</p>
+                        <p class="text-lg font-bold">{{ course.duration }} hours</p>
+                    </div>
+                    
+                    <div class="bg-gray-900 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">Level</p>
+                        <p class="text-lg font-bold">{{ course.level|title }}</p>
+                    </div>
+                    
+                    <div class="bg-gray-900 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">Students</p>
+                        <p class="text-lg font-bold">{{ course.enrollment_set.count }}</p>
+                    </div>
+                    
+                    <div class="bg-gray-900 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">Price</p>
+                        <p class="text-lg font-bold">
+                            {% if course.price %}
+                            ${{ course.price }}
+                            {% else %}
+                            Free
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Role-based Actions -->
+                <div class="flex space-x-4">
+                    {% if user.is_authenticated %}
+                        <!-- ADMIN ACTIONS -->
+                        {% if user.userprofile.role == 'admin' or user.userprofile.role == 'instructor' %}
+                            <a href="{% url 'course_update' course.id %}" 
+                               class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium transition">
+                                ✏️ Edit Course
+                            </a>
+                            <a href="{% url 'add_material' course.id %}" 
+                               class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition">
+                                📄 Add Material
+                            </a>
+                            <a href="{% url 'add_video' course.id %}" 
+                               class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg font-medium transition">
+                                📹 Add Video
+                            </a>
+                            {% if user.userprofile.role == 'admin' %}
+                            <a href="{% url 'course_delete' course.id %}" 
+                               class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg font-medium transition"
+                               onclick="return confirm('Are you sure you want to delete this course?')">
+                                🗑️ Delete
+                            </a>
+                            {% endif %}
+                            
+                        <!-- STUDENT ACTIONS -->
+                        {% else %}
+                            {% if is_enrolled %}
+                            <a href="#" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition">
+                                ✓ Already Enrolled
+                            </a>
+                            <a href="#" class="border border-gray-600 hover:border-gray-500 px-6 py-3 rounded-lg transition">
+                                Continue Learning →
+                            </a>
+                            {% else %}
+                            <a href="{% url 'enroll_course' course.id %}" 
+                               class="bg-primary-600 hover:bg-primary-700 px-6 py-3 rounded-lg font-medium transition">
+                                Enroll Now
+                            </a>
+                            {% endif %}
+                        {% endif %}
+                        
+                    <!-- UNAUTHENTICATED USERS -->
+                    {% else %}
+                    <a href="{% url 'signin' %}?next={% url 'course_detail' course.id %}" 
+                       class="bg-primary-600 hover:bg-primary-700 px-6 py-3 rounded-lg font-medium transition">
+                        Login to Enroll
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <!-- Admin/Instructor Quick Links (Secondary) -->
+                {% if user.is_authenticated and user.userprofile.role == 'admin' or user.userprofile.role == 'instructor' %}
+                <div class="mt-4 pt-4 border-t border-gray-700">
+                    <p class="text-sm text-gray-400 mb-2">Quick Management:</p>
+                    <div class="flex space-x-4 text-sm">
+                        <a href="{% url 'course_list' %}" class="text-primary-400 hover:text-primary-300">
+                            ← Back to Courses
+                        </a>
+                        <a href="{% url 'admin_dashboard' %}" class="text-primary-400 hover:text-primary-300">
+                            Dashboard
+                        </a>
+                        <a href="{% url 'manage_users' %}" class="text-primary-400 hover:text-primary-300">
+                            Manage Users
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Course Content Tabs -->
+    <div class="mb-8">
+        <div class="border-b border-gray-700">
+            <div class="flex space-x-8">
+                <button onclick="showTab('overview')" 
+                        class="tab-button pb-4 border-b-2 border-primary-600 font-medium text-primary-400">
+                    Overview
+                </button>
+                <button onclick="showTab('materials')" 
+                        class="tab-button pb-4 border-b-2 border-transparent hover:text-white transition">
+                    Materials
+                </button>
+                <button onclick="showTab('videos')" 
+                        class="tab-button pb-4 border-b-2 border-transparent hover:text-white transition">
+                    Videos
+                </button>
+                <!-- Admin Only: Show All Enrollments Tab -->
+                {% if user.is_authenticated and user.userprofile.role == 'admin' %}
+                <button onclick="showTab('enrollments')" 
+                        class="tab-button pb-4 border-b-2 border-transparent hover:text-white transition">
+                    Enrollments
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Overview Tab -->
+        <div id="overview-tab" class="tab-content py-6">
+            <h2 class="text-2xl font-bold mb-4">Course Overview</h2>
+            <div class="prose prose-invert max-w-none">
+                <p>{{ course.description }}</p>
+                
+                <h3 class="text-xl font-bold mt-6 mb-3">What You'll Learn</h3>
+                <ul class="list-disc pl-5 space-y-2">
+                    <li>Master the fundamentals of this subject</li>
+                    <li>Build practical projects</li>
+                    <li>Develop problem-solving skills</li>
+                    <li>Prepare for real-world applications</li>
+                </ul>
+                
+                <h3 class="text-xl font-bold mt-6 mb-3">Requirements</h3>
+                <ul class="list-disc pl-5 space-y-2">
+                    <li>Basic computer skills</li>
+                    <li>Internet connection</li>
+                    <li>Willingness to learn</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Materials Tab -->
+        <div id="materials-tab" class="tab-content py-6 hidden">
+            <h2 class="text-2xl font-bold mb-6">Course Materials</h2>
+            
+            {% if materials %}
+            <div class="space-y-4">
+                {% for material in materials %}
+                <div class="flex items-center justify-between p-4 bg-gray-800 rounded-lg hover:bg-gray-750 transition">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
+                            {% if material.material_type == 'pdf' %}
+                            <span class="text-2xl">📄</span>
+                            {% elif material.material_type == 'document' %}
+                            <span class="text-2xl">📝</span>
+                            {% elif material.material_type == 'presentation' %}
+                            <span class="text-2xl">📊</span>
+                            {% else %}
+                            <span class="text-2xl">📎</span>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h3 class="font-medium">{{ material.title }}</h3>
+                            <p class="text-sm text-gray-400">{{ material.material_type|upper }} • {{ material.file.size|filesizeformat }}</p>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <a href="{{ material.file.url }}" 
+                           class="bg-primary-600 hover:bg-primary-700 px-4 py-2 rounded-lg transition"
+                           download>
+                            Download
+                        </a>
+                        {% if user.is_authenticated and user.userprofile.role == 'admin' %}
+                        <a href="#" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition"
+                           onclick="return confirm('Delete this material?')">
+                            Delete
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8">
+                <div class="w-24 h-24 bg-gray-800 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <span class="text-4xl">📄</span>
+                </div>
+                <p class="text-gray-400">No materials available yet.</p>
+                {% if user.is_authenticated and user.userprofile.role == 'admin' or user.userprofile.role == 'instructor' %}
+                <a href="{% url 'add_material' course.id %}" class="text-primary-400 hover:text-primary-300 mt-2 inline-block">
+                    Add Materials →
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Videos Tab -->
+        <div id="videos-tab" class="tab-content py-6 hidden">
+            <h2 class="text-2xl font-bold mb-6">Course Videos</h2>
+            
+            {% if videos %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for video in videos %}
+                <div class="bg-gray-800 rounded-lg overflow-hidden">
+                    {% if video.video_url %}
+                    <div class="aspect-video bg-black">
+                        <!-- You would embed the video here -->
+                        <div class="w-full h-full flex items-center justify-center">
+                            <span class="text-4xl">▶️</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="aspect-video bg-black flex items-center justify-center">
+                        <span class="text-4xl">🎬</span>
+                    </div>
+                    {% endif %}
+                    <div class="p-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold mb-2">{{ video.title }}</h3>
+                                <p class="text-sm text-gray-400 mb-3">{{ video.description|truncatechars:100 }}</p>
+                            </div>
+                            {% if user.is_authenticated and user.userprofile.role == 'admin' %}
+                            <a href="#" class="text-red-400 hover:text-red-300 text-xs"
+                               onclick="return confirm('Delete this video?')">
+                                🗑️
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-400">{{ video.duration }} min</span>
+                            <button onclick="playVideo('{{ video.id }}')" 
+                                    class="text-primary-400 hover:text-primary-300">
+                                Watch Now →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8">
+                <div class="w-24 h-24 bg-gray-800 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <span class="text-4xl">🎬</span>
+                </div>
+                <p class="text-gray-400">No videos available yet.</p>
+                {% if user.is_authenticated and user.userprofile.role == 'admin' or user.userprofile.role == 'instructor' %}
+                <a href="{% url 'add_video' course.id %}" class="text-primary-400 hover:text-primary-300 mt-2 inline-block">
+                    Add Videos →
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Admin Only: Enrollments Tab -->
+        {% if user.is_authenticated and user.userprofile.role == 'admin' %}
+        <div id="enrollments-tab" class="tab-content py-6 hidden">
+            <h2 class="text-2xl font-bold mb-6">Student Enrollments</h2>
+            
+            {% if course.enrollment_set.all %}
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-left text-gray-400 border-b border-gray-700">
+                            <th class="pb-3">Student</th>
+                            <th class="pb-3">Email</th>
+                            <th class="pb-3">Enrolled Date</th>
+                            <th class="pb-3">Progress</th>
+                            <th class="pb-3">Status</th>
+                            <th class="pb-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for enrollment in course.enrollment_set.all %}
+                        <tr class="border-b border-gray-700 hover:bg-gray-750">
+                            <td class="py-3">{{ enrollment.student.username }}</td>
+                            <td class="py-3">{{ enrollment.student.email|default:"No email" }}</td>
+                            <td class="py-3">{{ enrollment.enrolled_at|date:"M d, Y" }}</td>
+                            <td class="py-3">
+                                <div class="flex items-center space-x-2">
+                                    <span>{{ enrollment.progress|default:"0" }}%</span>
+                                    <div class="w-16 bg-gray-700 rounded-full h-2">
+                                        <div class="bg-primary-600 h-2 rounded-full" style="width: {{ enrollment.progress|default:"0" }}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-3">
+                                <span class="px-2 py-1 rounded text-xs 
+                                    {% if enrollment.status == 'completed' %}bg-green-900 text-green-300
+                                    {% elif enrollment.status == 'pending' %}bg-yellow-900 text-yellow-300
+                                    {% else %}bg-blue-900 text-blue-300{% endif %}">
+                                    {{ enrollment.status|title }}
+                                </span>
+                            </td>
+                            <td class="py-3">
+                                <a href="{% url 'student_analytics' enrollment.student.id %}" 
+                                   class="text-primary-400 hover:text-primary-300 text-sm">
+                                    Analytics
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-8">
+                <p class="text-gray-400">No students enrolled yet.</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Instructor Info -->
+    <div class="bg-gray-800 rounded-xl p-6">
+        <h2 class="text-2xl font-bold mb-6">About the Instructor</h2>
+        <div class="flex items-center space-x-6">
+            <div class="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center">
+                <span class="text-2xl font-bold">{{ course.instructor.username|first|upper }}</span>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold">{{ course.instructor.get_full_name|default:course.instructor.username }}</h3>
+                <p class="text-gray-400 mb-3">{{ course.instructor.email }}</p>
+                {% if course.instructor.userprofile.bio %}
+                <p>{{ course.instructor.userprofile.bio }}</p>
+                {% else %}
+                <p class="text-gray-400">Experienced instructor with passion for teaching.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Tab switching functionality
+function showTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.add('hidden');
+    });
+    
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('border-primary-600', 'text-primary-400');
+        button.classList.add('border-transparent');
+    });
+    
+    // Show selected tab content
+    document.getElementById(tabName + '-tab').classList.remove('hidden');
+    
+    // Add active class to clicked tab button
+    event.target.classList.add('border-primary-600', 'text-primary-400');
+    event.target.classList.remove('border-transparent');
+}
+
+// Initialize first tab as active
+document.addEventListener('DOMContentLoaded', function() {
+    showTab('overview');
+});
+
+function playVideo(videoId) {
+    alert('Video player would open for video ID: ' + videoId);
+    // In a real implementation, this would open a video player modal
+}
+</script>
+
+<style>
+.tab-button {
+    transition: all 0.3s ease;
+}
+
+.tab-content {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+</style>
+{% endblock %}

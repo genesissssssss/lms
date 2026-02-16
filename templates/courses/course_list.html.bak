@@ -1,0 +1,71 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Available Courses - LMS{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold">Available Courses</h1>
+        {% if user.profile.is_admin or user.profile.is_instructor %}
+        <a href="{% url 'course_create' %}" class="bg-primary-600 hover:bg-primary-700 px-4 py-2 rounded-lg">
+            + Create Course
+        </a>
+        {% endif %}
+    </div>
+    
+    <!-- Filter/Search -->
+    <div class="bg-gray-800 rounded-xl p-4 mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+            <div class="flex-1">
+                <input type="text" placeholder="Search courses..." 
+                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary-500">
+            </div>
+            <div class="flex space-x-4">
+                <select class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary-500">
+                    <option value="">All Levels</option>
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                </select>
+                <button class="bg-primary-600 hover:bg-primary-700 px-4 py-2 rounded-lg">
+                    Filter
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Courses Grid -->
+    {% if courses %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for course in courses %}
+        <div class="bg-gray-800 rounded-xl overflow-hidden hover:bg-gray-750 transition transform hover:-translate-y-1">
+            {% if course.thumbnail %}
+            <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" 
+                 class="w-full h-48 object-cover">
+            {% else %}
+            <div class="w-full h-48 bg-gradient-to-r from-primary-600 to-primary-800 flex items-center justify-center">
+                <span class="text-5xl">&#128218;</span>
+            </div>
+            {% endif %}
+            
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">{{ course.title }}</h3>
+                        <p class="text-gray-400 text-sm mb-3">{{ course.description|truncatechars:120 }}</p>
+                    </div>
+                    <span class="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded">
+                        {{ course.level|title }}
+                    </span>
+                </div>
+                
+                <div class="flex justify-between items-center mb-4 text-sm text-gray-400">
+                    <div class="flex items-center space-x-2">
+                        <span>👤 {{ course.instructor.username }}</span>
+                        <span>⏱️ {{ course.duration }}h</span>
+                    </div>
+                    {% if course.price > 0 %}
+                    <span class="text-lg font-bold text-white">${{ course.price }}</span>
+                   
+{% endif %}
+{% endif %}

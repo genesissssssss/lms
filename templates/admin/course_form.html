@@ -1,0 +1,153 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{% if form.instance.pk %}Edit Course{% else %}Create Course{% endif %} - LMS{% endblock %}
+
+{% block content %}
+<div class="py-8 max-w-4xl mx-auto">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold">
+            {% if form.instance.pk %}
+            Edit Course: {{ form.instance.title }}
+            {% else %}
+            Create New Course
+            {% endif %}
+        </h1>
+        <p class="text-gray-400">Fill in the course details below</p>
+    </div>
+    
+    <div class="bg-gray-800 rounded-xl p-8">
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Left Column -->
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Course Title *</label>
+                        <input type="text" name="title" value="{{ form.title.value|default:'' }}" required
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500">
+                        {% if form.title.errors %}
+                        <p class="text-red-400 text-sm mt-1">{{ form.title.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Description *</label>
+                        <textarea name="description" rows="4" required
+                                  class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500">{{ form.description.value|default:'' }}</textarea>
+                        {% if form.description.errors %}
+                        <p class="text-red-400 text-sm mt-1">{{ form.description.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Thumbnail Image</label>
+                        <input type="file" name="thumbnail"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-600 file:text-white hover:file:bg-primary-700">
+                        {% if form.instance.thumbnail %}
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-400 mb-1">Current thumbnail:</p>
+                            <img src="{{ form.instance.thumbnail.url }}" alt="Current thumbnail" class="w-32 h-32 object-cover rounded">
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Right Column -->
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Level *</label>
+                        <select name="level" required
+                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500">
+                            <option value="beginner" {% if form.level.value == 'beginner' %}selected{% endif %}>Beginner</option>
+                            <option value="intermediate" {% if form.level.value == 'intermediate' %}selected{% endif %}>Intermediate</option>
+                            <option value="advanced" {% if form.level.value == 'advanced' %}selected{% endif %}>Advanced</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Duration (hours) *</label>
+                        <input type="number" name="duration" value="{{ form.duration.value|default:'' }}" required min="1"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Price ($) *</label>
+                        <input type="number" name="price" value="{{ form.price.value|default:'0' }}" required min="0" step="0.01"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500">
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="checkbox" name="is_published" id="is_published" {% if form.is_published.value %}checked{% endif %}
+                               class="w-4 h-4 text-primary-600 bg-gray-700 border-gray-600 rounded focus:ring-primary-500 focus:ring-2">
+                        <label for="is_published" class="ml-2 text-sm text-gray-300">Publish course immediately</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pt-6 border-t border-gray-700 flex justify-end space-x-4">
+                <a href="{% if form.instance.pk %}{% url 'course_detail' form.instance.pk %}{% else %}{% url 'course_list' %}{% endif %}" 
+                   class="border border-gray-600 hover:border-gray-500 px-6 py-3 rounded-lg transition">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-primary-600 hover:bg-primary-700 px-6 py-3 rounded-lg transition">
+                    {% if form.instance.pk %}Update Course{% else %}Create Course{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    {% if form.instance.pk %}
+    <div class="mt-8">
+        <h2 class="text-2xl font-bold mb-4">Course Materials & Videos</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-gray-800 rounded-xl p-6">
+                <h3 class="text-xl font-bold mb-4">Materials ({{ form.instance.materials.count }})</h3>
+                <a href="{% url 'add_material' form.instance.pk %}" 
+                   class="bg-primary-600 hover:bg-primary-700 px-4 py-2 rounded-lg inline-block mb-4">
+                    + Add Material
+                </a>
+                
+                {% if form.instance.materials.all %}
+                <div class="space-y-3">
+                    {% for material in form.instance.materials.all %}
+                    <div class="bg-gray-900 p-3 rounded-lg">
+                        <div class="flex justify-between items-center">
+                            <span>{{ material.title }}</span>
+                            <span class="text-sm text-gray-400">{{ material.material_type|upper }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-400">No materials added yet.</p>
+                {% endif %}
+            </div>
+            
+            <div class="bg-gray-800 rounded-xl p-6">
+                <h3 class="text-xl font-bold mb-4">Videos ({{ form.instance.videos.count }})</h3>
+                <a href="{% url 'add_video' form.instance.pk %}" 
+                   class="bg-primary-600 hover:bg-primary-700 px-4 py-2 rounded-lg inline-block mb-4">
+                    + Add Video
+                </a>
+                
+                {% if form.instance.videos.all %}
+                <div class="space-y-3">
+                    {% for video in form.instance.videos.all %}
+                    <div class="bg-gray-900 p-3 rounded-lg">
+                        <div class="flex justify-between items-center">
+                            <span>{{ video.title }}</span>
+                            <span class="text-sm text-gray-400">{{ video.duration }}min</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-400">No videos added yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

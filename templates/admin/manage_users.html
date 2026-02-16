@@ -1,0 +1,232 @@
+<!-- templates/admin/manage_users.html -->
+{% extends 'layouts/base.html' %}
+
+{% block title %}Manage Users - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold">User Management</h1>
+            <p class="text-gray-400">Manage user accounts and assign roles</p>
+        </div>
+        <div class="space-x-2">
+            <a href="{% url 'admin_dashboard' %}" class="border border-gray-600 hover:border-primary-400 px-4 py-2 rounded-lg transition">
+                ← Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- User Search and Filters -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-bold mb-2">Filter Users</h2>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{% url 'manage_users' %}" 
+                       class="px-3 py-1 rounded-full {% if not request.GET.role %}bg-primary-600{% else %}bg-gray-700 hover:bg-gray-600{% endif %}">
+                        All Users
+                    </a>
+                    <a href="{% url 'manage_users' %}?role=student" 
+                       class="px-3 py-1 rounded-full {% if request.GET.role == 'student' %}bg-blue-600{% else %}bg-gray-700 hover:bg-gray-600{% endif %}">
+                        Students
+                    </a>
+                   
+                    <a href="{% url 'manage_users' %}?role=admin" 
+                       class="px-3 py-1 rounded-full {% if request.GET.role == 'admin' %}bg-purple-600{% else %}bg-gray-700 hover:bg-gray-600{% endif %}">
+                        Admins
+                    </a>
+                </div>
+            </div>
+            
+            <div class="relative">
+                <input type="text" 
+                       placeholder="Search users..." 
+                       class="bg-gray-900 border border-gray-700 rounded-lg pl-10 pr-4 py-2 w-full md:w-64 focus:outline-none focus:border-primary-400"
+                       id="userSearch">
+                <div class="absolute left-3 top-2.5">
+                    <span class="text-gray-500">🔍</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Role Assignment Section -->
+    <div id="role-management" class="bg-gray-800 rounded-xl p-6 mb-8">
+        <h2 class="text-2xl font-bold mb-6">Role Assignment</h2>
+        <p class="text-gray-400 mb-6">Assign roles to users to control their access and permissions.</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-gray-900 p-4 rounded-lg">
+                <div class="w-12 h-12 bg-blue-600 rounded-lg mb-3 flex items-center justify-center">
+                    <span class="text-xl">👤</span>
+                </div>
+                <h3 class="font-bold mb-2">Student Role</h3>
+                <p class="text-sm text-gray-400 mb-3">Can enroll in courses, view materials, track progress</p>
+                <div class="text-xs text-gray-500">
+                    <span class="inline-block bg-gray-800 px-2 py-1 rounded mr-1 mb-1">Course Access</span>
+                    <span class="inline-block bg-gray-800 px-2 py-1 rounded mr-1 mb-1">Progress Tracking</span>
+                </div>
+            </div>
+            
+           
+            
+            <div class="bg-gray-900 p-4 rounded-lg">
+                <div class="w-12 h-12 bg-purple-600 rounded-lg mb-3 flex items-center justify-center">
+                    <span class="text-xl">⚙️</span>
+                </div>
+                <h3 class="font-bold mb-2">Admin Role</h3>
+                <p class="text-sm text-gray-400 mb-3">Full system access, user management, analytics</p>
+                <div class="text-xs text-gray-500">
+                    <span class="inline-block bg-gray-800 px-2 py-1 rounded mr-1 mb-1">User Management</span>
+                    <span class="inline-block bg-gray-800 px-2 py-1 rounded mr-1 mb-1">System Settings</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="bg-gray-800 rounded-xl p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">Users List</h2>
+            <div class="text-gray-400">
+                Showing {{ users|length }} user{{ users|length|pluralize }}
+            </div>
+        </div>
+        
+        {% if users %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="text-left text-gray-400 border-b border-gray-700">
+                        <th class="pb-3">User</th>
+                        <th class="pb-3">Email</th>
+                        <th class="pb-3">Joined</th>
+                        <th class="pb-3">Current Role</th>
+                        <th class="pb-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user_obj in users %}
+                    <tr class="border-b border-gray-700 hover:bg-gray-750">
+                        <td class="py-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 
+                                    {% if user_obj.userprofile.role == 'admin' %}bg-purple-600
+                                    {% elif user_obj.userprofile.role == 'instructor' %}bg-green-600
+                                    {% else %}bg-blue-600{% endif %} 
+                                    rounded-full flex items-center justify-center">
+                                    <span class="font-bold">{{ user_obj.username|first|upper }}</span>
+                                </div>
+                                <div>
+                                    <div class="font-medium">{{ user_obj.username }}</div>
+                                    <div class="text-xs text-gray-400">{{ user_obj.first_name }} {{ user_obj.last_name }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3">{{ user_obj.email|default:"No email" }}</td>
+                        <td class="py-3">
+                            <span class="text-sm">{{ user_obj.date_joined|date:"M d, Y" }}</span>
+                        </td>
+                        <td class="py-3">
+                            <span class="px-3 py-1 rounded-full text-xs 
+                                {% if user_obj.userprofile.role == 'admin' %}bg-purple-900 text-purple-300
+                                {% elif user_obj.userprofile.role == 'instructor' %}bg-green-900 text-green-300
+                                {% else %}bg-blue-900 text-blue-300{% endif %}">
+                                {{ user_obj.userprofile.role|title }}
+                            </span>
+                        </td>
+                        <td class="py-3">
+                            <div class="flex space-x-2">
+                                <!-- Role Change Form -->
+                                <form method="post" action="{% url 'manage_users' %}" class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="user_id" value="{{ user_obj.id }}">
+                                    <select name="new_role" 
+                                            class="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs"
+                                            onchange="this.form.submit()">
+                                        <option value="student" {% if user_obj.userprofile.role == 'student' %}selected{% endif %}>Student</option>
+                                        <option value="instructor" {% if user_obj.userprofile.role == 'instructor' %}selected{% endif %}>Instructor</option>
+                                        <option value="admin" {% if user_obj.userprofile.role == 'admin' %}selected{% endif %}>Admin</option>
+                                    </select>
+                                </form>
+                                
+                                <!-- View Analytics -->
+                                <a href="{% url 'student_analytics' user_obj.id %}" 
+                                   class="text-green-400 hover:text-green-300 text-xs px-2 py-1 border border-green-700 rounded"
+                                   title="View Analytics">
+                                    📊
+                                </a>
+                                
+                                <!-- View Profile -->
+                                <a href="#" 
+                                   class="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 border border-blue-700 rounded"
+                                   title="View Profile">
+                                    👁️
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="flex justify-center mt-6">
+            <div class="flex space-x-2">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.role %}&role={{ request.GET.role }}{% endif %}" 
+                       class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
+                        ← Previous
+                    </a>
+                {% endif %}
+                
+                <span class="px-3 py-1 bg-gray-900 rounded">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+                
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.role %}&role={{ request.GET.role }}{% endif %}" 
+                       class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
+                        Next →
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-8">
+            <div class="w-20 h-20 bg-gray-700 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <span class="text-3xl">👤</span>
+            </div>
+            <p class="text-gray-400 mb-2">No users found.</p>
+            <p class="text-sm text-gray-500">Try changing your filters or search term.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Simple search functionality
+    document.getElementById('userSearch').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('tbody tr');
+        
+        rows.forEach(row => {
+            const username = row.querySelector('.font-medium').textContent.toLowerCase();
+            const email = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+            const name = row.querySelector('.text-xs').textContent.toLowerCase();
+            
+            if (username.includes(searchTerm) || email.includes(searchTerm) || name.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}
