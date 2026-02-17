@@ -21,11 +21,10 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'cloudinary',
     
-    # Third-party apps
+    
     'crispy_forms',
     'crispy_tailwind',
     
-    # Local apps
     'core.apps.CoreConfig',
     'accounts.apps.AccountsConfig',
 ]
@@ -63,7 +62,7 @@ WSGI_APPLICATION = 'lms.wsgi.application'
 
 # Database configuration
 if 'DATABASE_URL' in os.environ:
-    # Production - use PostgreSQL from environment variable
+   
     DATABASES = {
         'default': dj_database_url.config(
             conn_max_age=600,
