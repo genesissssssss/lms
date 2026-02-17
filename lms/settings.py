@@ -21,17 +21,18 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'cloudinary',
     
-    
+    # Third-party apps
     'crispy_forms',
     'crispy_tailwind',
     
+    # Local apps
     'core.apps.CoreConfig',
     'accounts.apps.AccountsConfig',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Move this up
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -62,16 +63,14 @@ WSGI_APPLICATION = 'lms.wsgi.application'
 
 # Database configuration
 if 'DATABASE_URL' in os.environ:
-   
     DATABASES = {
         'default': dj_database_url.config(
             conn_max_age=600,
             ssl_require=True
         )
     }
-    print(f"✅ Using production database: {os.environ.get('DATABASE_URL', '')[:30]}...")
+    print(f"✅ Using production database")
 else:
-    # Local development - SQLite
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -100,16 +99,17 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
+# ===== STATIC FILES =====
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Media files - Define MEDIA_ROOT BEFORE using it!
+# ===== MEDIA FILES - IMPORTANT: These must come BEFORE any os.makedirs calls =====
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Create media directories (this comes AFTER MEDIA_ROOT is defined)
+# Create media directories (now MEDIA_ROOT is defined)
 os.makedirs(STATIC_ROOT, exist_ok=True)
 os.makedirs(MEDIA_ROOT, exist_ok=True)
 os.makedirs(os.path.join(MEDIA_ROOT, 'course_thumbnails'), exist_ok=True)
@@ -117,7 +117,7 @@ os.makedirs(os.path.join(MEDIA_ROOT, 'course_materials'), exist_ok=True)
 os.makedirs(os.path.join(MEDIA_ROOT, 'course_videos'), exist_ok=True)
 os.makedirs(os.path.join(MEDIA_ROOT, 'profile_pictures'), exist_ok=True)
 
-# Cloudinary configuration (for production)
+# Cloudinary configuration
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
@@ -128,7 +128,6 @@ cloudinary.config(
     api_secret=config('CLOUDINARY_API_SECRET', default=''),
 )
 
-# Use Cloudinary for media files in production
 if not DEBUG:
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     print("✅ Using Cloudinary for media storage")
@@ -143,12 +142,3 @@ LOGIN_URL = 'signin'
 # Crispy Forms
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
 CRISPY_TEMPLATE_PACK = "tailwind"
-
-# WhiteNoise storage for static files
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Print debug info (these will show in Vercel logs)
-print(f"🔧 DEBUG mode: {DEBUG}")
-print(f"🔧 DATABASE_URL in env: {'DATABASE_URL' in os.environ}")
-print(f"🔧 STATIC_ROOT: {STATIC_ROOT}")
-print(f"🔧 MEDIA_ROOT: {MEDIA_ROOT}")
