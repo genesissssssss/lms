@@ -10,7 +10,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-your-secret-key-here'
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 # FIXED: This allows any vercel.app subdomain
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver,.vercel.app,.now.sh').split(',')
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '.vercel.app', '.now.sh']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
