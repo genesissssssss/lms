@@ -12,9 +12,9 @@ echo "🐍 Python version: $(python --version)"
 echo "📦 Installing dependencies..."
 pip install -r requirements.txt
 
-# Show installed packages
+# Show installed packages for debugging
 echo "📋 Installed packages:"
-pip list | grep -E "Django|psycopg2|cloudinary|whitenoise"
+pip list | grep -E "Django|psycopg2|cloudinary|whitenoise|dj-database-url"
 
 # Collect static files
 echo "🎨 Collecting static files..."
@@ -53,7 +53,7 @@ username = 'admin'
 password = 'admin123'
 email = 'admin@example.com'
 
-# Check if admin user exists
+print(f"Checking if admin user exists...")
 if not User.objects.filter(username=username).exists():
     print(f"Creating admin user: {username}")
     user = User.objects.create_superuser(username, email, password)
