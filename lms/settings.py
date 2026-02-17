@@ -105,17 +105,22 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# ===== MEDIA FILES - IMPORTANT: These must come BEFORE any os.makedirs calls =====
+# ===== MEDIA FILES - Using Cloudinary in production =====
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Create media directories (now MEDIA_ROOT is defined)
-os.makedirs(STATIC_ROOT, exist_ok=True)
-os.makedirs(MEDIA_ROOT, exist_ok=True)
-os.makedirs(os.path.join(MEDIA_ROOT, 'course_thumbnails'), exist_ok=True)
-os.makedirs(os.path.join(MEDIA_ROOT, 'course_materials'), exist_ok=True)
-os.makedirs(os.path.join(MEDIA_ROOT, 'course_videos'), exist_ok=True)
-os.makedirs(os.path.join(MEDIA_ROOT, 'profile_pictures'), exist_ok=True)
+# DO NOT create directories on Vercel - it's read-only!
+# Only create them in development
+if not DEBUG:
+    print("🏭 Production mode: Using Cloudinary for media files")
+else:
+    # Local development - create media directories
+    os.makedirs(MEDIA_ROOT, exist_ok=True)
+    os.makedirs(os.path.join(MEDIA_ROOT, 'course_thumbnails'), exist_ok=True)
+    os.makedirs(os.path.join(MEDIA_ROOT, 'course_materials'), exist_ok=True)
+    os.makedirs(os.path.join(MEDIA_ROOT, 'course_videos'), exist_ok=True)
+    os.makedirs(os.path.join(MEDIA_ROOT, 'profile_pictures'), exist_ok=True)
+    print("📁 Created local media directories")
 
 # Cloudinary configuration
 import cloudinary
@@ -128,9 +133,12 @@ cloudinary.config(
     api_secret=config('CLOUDINARY_API_SECRET', default=''),
 )
 
-if not DEBUG:
+# Use Cloudinary for media files in production
+if not DEBUG and config('CLOUDINARY_CLOUD_NAME', default=''):
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     print("✅ Using Cloudinary for media storage")
+else:
+    print("📁 Using local file system for media storage")
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
