@@ -3,7 +3,6 @@
 echo "=========================================="
 echo "🚀 Starting Vercel build process"
 echo "=========================================="
-
 echo "📁 Current directory: $(pwd)"
 echo "🐍 Python version: $(python --version)"
 
@@ -11,29 +10,28 @@ echo "🐍 Python version: $(python --version)"
 echo "📦 Installing dependencies..."
 pip install -r requirements.txt
 
-# CRITICAL: Make sure static directory exists
-echo "📁 Checking static directory..."
-mkdir -p static/css
-
-# If you have a CSS file somewhere else, copy it to the right place
-if [ -f "staticfiles/css/styles.css" ]; then
-    echo "📋 Copying CSS file from staticfiles to static..."
-    cp staticfiles/css/styles.css static/css/ 2>/dev/null || echo "No CSS file to copy"
-fi
+# Show installed packages for debugging
+echo "📋 Installed packages:"
+pip list | grep -E "Django|psycopg2|cloudinary|whitenoise|dj-database-url"
 
 # Collect static files
 echo "🎨 Collecting static files..."
-python manage.py collectstatic --noinput --clear
+python manage.py collectstatic --noinput
 
-# Run migrations
+# CRITICAL: Run migrations to create database tables
 echo "=========================================="
 echo "🗄️  Running database migrations..."
 echo "=========================================="
 
+# Force migration creation and application
 python manage.py makemigrations accounts --noinput
 python manage.py makemigrations core --noinput
 python manage.py makemigrations --noinput
 python manage.py migrate --noinput
+
+# Verify migrations
+echo "✅ Checking migration status:"
+python manage.py showmigrations
 
 # Create superuser if it doesn't exist
 echo "=========================================="
@@ -56,6 +54,14 @@ if not User.objects.filter(username=username).exists():
     print("✅ Admin user created successfully")
 else:
     print("✅ Admin user already exists")
+    
+    # Ensure admin has correct role
+    user = User.objects.get(username=username)
+    profile, created = UserProfile.objects.get_or_create(user=user, defaults={'role': 'admin'})
+    if not created and profile.role != 'admin':
+        profile.role = 'admin'
+        profile.save()
+        print("✅ Updated admin role")
 EOF
 
 echo "=========================================="
