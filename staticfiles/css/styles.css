@@ -1,36 +1,50 @@
+﻿/* LMS Custom Styles */
+
+/* Smooth transitions */
 * {
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-::-webkit-scrollbar {
-    width: 8px;
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar {
+    width: 10px;
 }
 
-::-webkit-scrollbar-track {
+.dark ::-webkit-scrollbar-track {
     background: #1f2937;
 }
 
-::-webkit-scrollbar-thumb {
+.dark ::-webkit-scrollbar-thumb {
     background: #4b5563;
-    border-radius: 4px;
+    border-radius: 5px;
 }
 
-::-webkit-scrollbar-thumb:hover {
+.dark ::-webkit-scrollbar-thumb:hover {
     background: #6b7280;
 }
 
-/* Form focus styles */
-input:focus, textarea:focus, select:focus {
-    outline: none;
-    ring: 2px;
-    ring-color: #0ea5e9;
+/* Animations */
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-slide-up {
+    animation: slide-up 0.3s ease-out;
 }
 
 /* Card hover effects */
-.hover-lift {
-    transition: transform 0.2s ease;
+.hover-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.hover-lift:hover {
+.hover-card:hover {
     transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
 }

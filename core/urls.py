@@ -47,4 +47,6 @@ urlpatterns = [
     path('admin/enrollments/', views.ManageEnrollmentsView.as_view(), name='manage_enrollments'),
     # Admin Analytics
     path('admin/analytics/students/', views.StudentAnalyticsView.as_view(), name='student_analytics'),
+
+    path('test-db/', views.test_db, name='test_db'),
 ]

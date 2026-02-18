@@ -5,7 +5,7 @@ from django.urls import reverse_lazy
 from django.db.models import Count, Avg, Q, Sum, Max, Min
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from .models import Course, Enrollment, CourseMaterial, CourseVideo
 from accounts.models import UserProfile
 from .forms import CourseForm, CourseMaterialForm, CourseVideoForm
@@ -13,6 +13,50 @@ from django.views import generic
 from django.db.models.functions import TruncMonth, TruncWeek
 from django.utils import timezone
 from datetime import timedelta
+from django.db import connection
+
+
+def test_db(request):
+    """Test database connection"""
+    try:
+        # Test database connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            db_ok = "✅ Database connection successful"
+    except Exception as e:
+        db_ok = f"❌ Database connection failed: {e}"
+    
+    # Check if tables exist
+    try:
+        user_count = User.objects.count()
+        tables_ok = f"✅ Tables exist. User count: {user_count}"
+    except Exception as e:
+        tables_ok = f"❌ Tables error: {e}"
+    
+    # Check environment
+    env_info = f"""
+    <h3>Environment:</h3>
+    <ul>
+        <li>DEBUG: {DEBUG}</li>
+        <li>DATABASE_URL set: {'✅ Yes' if 'DATABASE_URL' in os.environ else '❌ No'}</li>
+        <li>Cloudinary set: {'✅ Yes' if config('CLOUDINARY_CLOUD_NAME', '') else '❌ No'}</li>
+    </ul>
+    """
+    
+    return HttpResponse(f"""
+    <html>
+    <head><title>Database Test</title></head>
+    <body style="background: #111; color: #fff; padding: 20px; font-family: monospace;">
+        <h1>🔍 Database Diagnostics</h1>
+        <hr>
+        <h3>Connection:</h3>
+        <p>{db_ok}</p>
+        <h3>Tables:</h3>
+        <p>{tables_ok}</p>
+        {env_info}
+    </body>
+    </html>
+    """)
 
 def create_admin(request):
     if not User.objects.filter(username='admin').exists():
