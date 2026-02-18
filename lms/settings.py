@@ -164,3 +164,13 @@ LOGIN_URL = 'signin'
 # Crispy Forms
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
 CRISPY_TEMPLATE_PACK = "tailwind"
+
+# At the bottom of settings.py, add:
+import sys
+
+print("="*50)
+print("DJANGO SETTINGS LOADED")
+print(f"DEBUG: {DEBUG}")
+print(f"DATABASE: {'PostgreSQL' if not DEBUG else 'SQLite'}")
+print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
+print("="*50)
