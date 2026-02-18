@@ -5,7 +5,7 @@ from django.urls import reverse_lazy
 from django.db.models import Count, Avg, Q, Sum, Max, Min
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.http import JsonResponse, HttpResponse  # Added HttpResponse
+from django.http import JsonResponse
 from .models import Course, Enrollment, CourseMaterial, CourseVideo
 from accounts.models import UserProfile
 from .forms import CourseForm, CourseMaterialForm, CourseVideoForm
@@ -15,7 +15,6 @@ from django.utils import timezone
 from datetime import timedelta
 
 def create_admin(request):
-    """Temporary view to create admin user"""
     if not User.objects.filter(username='admin').exists():
         user = User.objects.create_user(
             username='admin',
@@ -25,8 +24,8 @@ def create_admin(request):
             is_superuser=True
         )
         UserProfile.objects.create(user=user, role='admin')
-        return HttpResponse("✅ Admin user created successfully!")
-    return HttpResponse("✅ Admin user already exists")
+        return HttpResponse("Admin created!")
+    return HttpResponse("Admin already exists")
 
 class HomeView(TemplateView):
     """Home page view"""
@@ -61,7 +60,7 @@ class StudentDashboardView(LoginRequiredMixin, TemplateView):
         # Calculate statistics
         context['total_enrolled'] = enrolled_courses.count()
         context['completed_courses'] = enrolled_courses.filter(status='completed').count()
-        context['in_progress_courses'] = enrolled_courses.filter(status='enrolled').count()  # Fixed: was 'in_progress'
+        context['in_progress_courses'] = enrolled_courses.filter(status='in_progress').count()
         
         # Calculate overall progress
         if enrolled_courses.exists():
@@ -77,19 +76,13 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, generic.Templa
     
     def test_func(self):
         """Only allow users with admin role to access this view."""
-        try:
-            return self.request.user.userprofile.role == 'admin'
-        except (AttributeError, UserProfile.DoesNotExist):
-            return False
+        return hasattr(self.request.user, 'userprofile') and self.request.user.userprofile.role == 'admin'
     
     def handle_no_permission(self):
         """Redirect non-admin users to their appropriate dashboard."""
         if self.request.user.is_authenticated:
-            try:
-                if self.request.user.userprofile.role == 'student':
-                    return redirect('student_dashboard')
-            except (AttributeError, UserProfile.DoesNotExist):
-                pass
+            if hasattr(self.request.user, 'userprofile') and self.request.user.userprofile.role == 'student':
+                return redirect('student_dashboard')
         return redirect('home')
     
     def get_context_data(self, **kwargs):
@@ -103,11 +96,8 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, generic.Templa
         context['recent_users'] = User.objects.order_by('-date_joined')[:5]
         context['system_status'] = 'Operational'
         
-        # Get courses with enrollment counts
-        courses = Course.objects.all().annotate(
-            enrollment_count=Count('enrollments')
-        )[:10]
-        context['courses'] = courses
+        # Get courses - don't try to set additional attributes
+        context['courses'] = Course.objects.all()[:10]
         
         return context
 
@@ -160,17 +150,15 @@ class EnrollCourseView(LoginRequiredMixin, View):
         user = request.user
         
         # Check if user has a profile
-        try:
-            user_profile = user.userprofile
-        except (AttributeError, UserProfile.DoesNotExist):
+        if not hasattr(user, 'userprofile'):
             messages.error(request, 'User profile not found. Please contact support.')
             return redirect('course_detail', pk=course_id)
         
         # Check role - only students can enroll
-        if user_profile.role == 'admin':
+        if user.userprofile.role == 'admin':
             messages.error(request, 'Admins cannot enroll in courses. Use the admin dashboard to manage courses.')
             return redirect('admin_dashboard')
-        elif user_profile.role == 'instructor':
+        elif user.userprofile.role == 'instructor':
             messages.error(request, 'Instructors cannot enroll in courses. You can create and manage courses.')
             return redirect('admin_dashboard')
         
@@ -206,7 +194,7 @@ class CourseCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         try:
             user_profile = self.request.user.userprofile
             return user_profile.role in ['admin', 'instructor']
-        except (AttributeError, UserProfile.DoesNotExist):
+        except UserProfile.DoesNotExist:
             return False
     
     def form_valid(self, form):
@@ -227,7 +215,7 @@ class CourseUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             course = self.get_object()
             # Admin or course instructor can update
             return user_profile.role == 'admin' or course.instructor == self.request.user
-        except (AttributeError, UserProfile.DoesNotExist):
+        except UserProfile.DoesNotExist:
             return False
     
     def form_valid(self, form):
@@ -244,7 +232,7 @@ class CourseDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         try:
             user_profile = self.request.user.userprofile
             return user_profile.role == 'admin'
-        except (AttributeError, UserProfile.DoesNotExist):
+        except UserProfile.DoesNotExist:
             return False
     
     def delete(self, request, *args, **kwargs):
@@ -261,7 +249,7 @@ class ManageUsersView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         """Only allow admin users"""
         try:
             return self.request.user.userprofile.role == 'admin'
-        except (AttributeError, UserProfile.DoesNotExist):
+        except UserProfile.DoesNotExist:
             return False
     
     def get_queryset(self):
@@ -282,7 +270,7 @@ class ManageUsersView(LoginRequiredMixin, UserPassesTestMixin, ListView):
                 Q(last_name__icontains=search_query)
             )
         
-        return queryset.select_related('userprofile')
+        return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -303,7 +291,7 @@ class ManageUsersView(LoginRequiredMixin, UserPassesTestMixin, ListView):
                 messages.success(request, f'Updated {user.username} role to {new_role}')
             except User.DoesNotExist:
                 messages.error(request, 'User not found')
-            except (AttributeError, UserProfile.DoesNotExist):
+            except AttributeError:
                 messages.error(request, 'User profile not found')
         
         return redirect('manage_users')
@@ -318,7 +306,7 @@ class AddMaterialView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         try:
             role = self.request.user.userprofile.role
             return role in ['admin', 'instructor']
-        except (AttributeError, UserProfile.DoesNotExist):
+        except UserProfile.DoesNotExist:
             return False
     
     def get_context_data(self, **kwargs):
@@ -348,7 +336,7 @@ class AddVideoView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         try:
             role = self.request.user.userprofile.role
             return role in ['admin', 'instructor']
-        except (AttributeError, UserProfile.DoesNotExist):
+        except UserProfile.DoesNotExist:
             return False
     
     def get_context_data(self, **kwargs):
@@ -368,6 +356,51 @@ class AddVideoView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         course_id = self.kwargs.get('course_id')
         return reverse_lazy('course_detail', kwargs={'pk': course_id})
 
+class StudentAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    """Student analytics view"""
+    model = User
+    template_name = 'admin/student_analytics.html'
+    context_object_name = 'student'
+    
+    def test_func(self):
+        try:
+            return self.request.user.userprofile.role == 'admin'
+        except UserProfile.DoesNotExist:
+            return False
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        student = self.get_object()
+        
+        # Get all enrollments for this student
+        enrollments = Enrollment.objects.filter(
+            student=student
+        ).select_related('course').order_by('-enrolled_at')
+        
+        context['enrollments'] = enrollments
+        context['total_courses'] = enrollments.count()
+        context['completed_courses'] = enrollments.filter(status='completed').count()
+        
+        # Calculate average progress
+        if enrollments.exists():
+            total_progress = sum(enrollment.progress or 0 for enrollment in enrollments)
+            context['average_progress'] = round(total_progress / enrollments.count())
+        else:
+            context['average_progress'] = 0
+        
+        # Generate recent activity
+        context['recent_activity'] = [
+            {
+                'type': 'enrollment',
+                'description': f'Enrolled in {enrollment.course.title}',
+                'timestamp': enrollment.enrolled_at
+            }
+            for enrollment in enrollments[:5]
+        ]
+        
+        return context
+    
+    # Add to core/views.py
 class ManageEnrollmentsView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     """Manage all enrollments view"""
     model = Enrollment
@@ -377,10 +410,7 @@ class ManageEnrollmentsView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     
     def test_func(self):
         """Only allow admin users"""
-        try:
-            return self.request.user.userprofile.role == 'admin'
-        except (AttributeError, UserProfile.DoesNotExist):
-            return False
+        return hasattr(self.request.user, 'userprofile') and self.request.user.userprofile.role == 'admin'
     
     def get_queryset(self):
         queryset = Enrollment.objects.select_related('student', 'course').order_by('-enrolled_at')
@@ -426,6 +456,7 @@ class ManageEnrollmentsView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         
         return redirect('manage_enrollments')
      
+    
 class StudentAchievementsView(LoginRequiredMixin, TemplateView):
     """Student achievements view showing progress in enrolled courses"""
     template_name = 'dashboard/achievements.html'
@@ -532,17 +563,16 @@ class StudentAchievementsView(LoginRequiredMixin, TemplateView):
         })
         
         return context
+    
+    
 
-class AdminStudentAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class StudentAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     """Student analytics view for admin to track student progress"""
     template_name = 'admin/student_analytics.html'
     
     def test_func(self):
         """Only allow admin users"""
-        try:
-            return self.request.user.userprofile.role == 'admin'
-        except (AttributeError, UserProfile.DoesNotExist):
-            return False
+        return hasattr(self.request.user, 'userprofile') and self.request.user.userprofile.role == 'admin'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
