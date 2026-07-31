@@ -96,5 +96,47 @@ class CourseViewSet(viewsets.ModelViewSet):
                 return queryset.filter(
                     Q(is_published=True) | Q(instructor=self.request.user)
                 )
-
+ 
+         # Students and public only see published        
         return queryset.filter(is_published=True)
+
+    def perform_create(self, serializer):
+        """Set Intructor to current user on create"""
+        serializer.save(instructor=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def enroll(self, request, slug=None):
+        """Enroll current user inthis course"""
+        course = self.get_object()
+
+        #Check if already enrolled
+        if Enrollment.objects.filter(student=request.user, course=course).exist():
+            return Response(
+                {'detail': 'Already enrolled in this course'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        #create enrollment
+        enrollment = Enrollment.objects.create(
+            student=request.user,
+            course=course,
+            status='active'
+        )
+
+        #update course enrolled count
+        course.enrolled_count += 1
+        course.save()
+
+        serializer = EnrollmentSerializer(enrollment)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['get'])
+    def modules(self, request, slug=None):
+        """Get all modules for this course"""
+
+        course = self.get_object()
+        modules = course.modules.all().order_by('order')
+        serializer = ModuleSerializer(modules, many=True)
+        return Response(serializer.data)
+
+    
