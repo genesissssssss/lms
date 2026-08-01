@@ -139,4 +139,169 @@ class CourseViewSet(viewsets.ModelViewSet):
         serializer = ModuleSerializer(modules, many=True)
         return Response(serializer.data)
 
+#Module Views
+class ModuleListView(generics.ListAPIView):
+    """List all modules for a course"""
+    serializer_class = ModuleSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        course_slug = self.kwargs.get('course_slug')
+        course = get_object_or_404(Course, slug=course_slug, is_published=True)
+        return course.modules.all().order_by('order')
+
+class ModuleDetailView(generics.RetrieveAPIView):
+    """Get module details with lessons"""
+
+    serializer_class = ModuleSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    lookup_field = 'order'
+
+    def get_queryset(self):
+        course_slug = self.kwargs.get('course_slug')
+        course = get_object_or_404(Course, slug=course_slug, is_published=True)
+        return Module.objects.filter(course=course)
+
+#Lesson Views
+class LessonDetailView(generics.RetrieveAPIView):
+    """get lesson details"""
+    serializer_class = LessonSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        course_slug = self.kwargs.get('course_slug')
+        module_order = self.kwargs.get('module_order')
+        course = get_object_or_404(Course, slug=course_slug, is_published=True)
+        module = get_object_or_404(Module, course=course, order=module_order)
+        return Lesson.objects.filter(module=module)
+
+    def get_object(self):
+        lesson_order = self.kwargs.get('lesson_order')
+        return get_object_or_404(self.get_queryset(), order=lesson_order)
+
+#Enrollment views'
+class EnrollmentListView(generics.ListAPIView):
+    serializer_class = EnrollmentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Enrollment.objects.filter(student=self.request.user)
+
+class EnrollmentDetailView(generics.RetrieveUpdateAPIView):
+    """Get or update enrollment details"""
+
+    serializer_class = EnrollmentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Enrollment.objects.filter(student=self.request.user)
+
+#Lesson progress view
+class LessonProgressView(generics.RetrieveUpdateAPIView):
+    """Get or update lesson progress"""
+    serializer_class = LessonProgressSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return LessonProgress.objects.filter(
+            enrollment__student=self.request.user
+        )
+    def get_object(self):
+        """Get progress for specific lesson"""
+        enrollment_id = self.kwargs.get('enrollment_id')
+        lesson_id = self.kwargs.get('lesson_id')
+        return get_object_or_404(
+            LessonProgress,
+            enrollment_id=enrollment_id,
+            lesson_id=lesson_id,
+            enrollment__student=self.request.user
+        )    
+    def perform_update(self, serializer):
+        """Update progress and check for completion"""
+        serializer.save()
+
+        if serializer.instance.is_completed:
+            serializer.instance.enrollment.update_progress()
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_lesson_complete_api(request, lesson_id):
+    """API endpoint to mark a lesson as complete"""
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+    course = lesson.module.course
+
+    #check if enrolled
+    enrollment, created = Enrollment.objects.get_or_create(
+        student=request.user,
+        course=course
+    )
+
+    #update progress
+    progress, created = LessonProgress.objects.get_or_create(
+        enrollment=enrollment,
+        lesson=lesson
+
+    )
+
+    if not progress.is_completed:
+        progress.complete_lesson()
+
+    return Response({
+        'success': True,
+        'progress': enrollment.progress_percentage,
+        'completed': progress.is_completed
+    })
+
+#dashboard view
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_api(request):
+    """API endpoint for user dashboard"""
+
+    #enrollments
+    enrollments = Enrollment.objects.filter(
+        student=request.user
+    ).select_related('course')
+
+    #statistics
+    total_courses = enrollments.count()
+    completed_courses = enrollments.filter(status='completed').count()
+    in_progress_courses = enrollments.filter(status='active').count()
+    avg_progress = enrollments.aggregate(Avg('progress_percentage'))['progress_percentage_avg'] or 0
+
+    #recent activity
+    recent_completions = LessonProgress.objects.filter(
+        enrollments__student=request.user,
+        is_completed=True
+    ).select_related('lesson', 'enrollment__course').order_by('-completed_at')[:5]
+
+    #recommended courses
+    enrolled_course_ids = enrollments.values_list('course_id', flat=True)
+    recommended_courses = Course.objects.filter(
+        is_published=True
+    ).exclude(
+        id__in=enrolled_course_ids
+    ).annotate(
+        student_count=Count('students')
+    ).order_by('-student_count')[:6]
+
+    return Response({
+        'statistics':{
+            'total_courses': total_courses,
+            'completed_courses': completed_courses,
+            'in_progress_courses': in_progress_courses,
+            'average_progress': round(avg_progress)
+        },
+        'enrollments': EnrollmentSerializer(enrollments, many=True).data,
+        'recent_completions': [
+            {
+                'lesson': progress.lesson.title,
+                'course': progress.enrollment.course.title,
+                'completed_at': progress.completed_at
+            }
+            for progress in recent_completions
+        ],
+        'recommended_courses': CourseListSerializer(recommended_courses, many=True).data
+    })
     
